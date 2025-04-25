@@ -1,5 +1,6 @@
 from enum import Enum
 from itertools import cycle
+from typing import List
 
 import pygame
 
@@ -8,6 +9,7 @@ from .entity import Entity
 from .floor import Floor
 from .pipe import Pipe, Pipes
 from .powerup import PowerUpType
+from .bullet import Bullet
 
 
 class PlayerMode(Enum):
@@ -17,6 +19,7 @@ class PlayerMode(Enum):
     CRASH = "CRASH"  # 撞击模式
     CRASHED = "CRASHED"  # 撞击模式
     REVERSE = "REVERSE"  # 反向模式
+    BOSS = "BOSS"  # Boss模式
 
 
 class Player(Entity):
@@ -38,6 +41,13 @@ class Player(Entity):
         self.size_modifier = 1.0   # 大小修改器
         self.original_image = None # 保存原始图像
         self.is_reverse_mode = False  # 是否为反向模式
+        
+        # 子弹相关
+        self.bullets: List[Bullet] = []  # 玩家发射的子弹
+        self.bullet_cooldown = 0  # 子弹冷却时间
+        self.bullet_rate = 20  # 多少帧发射一次子弹
+        self.bullet_damage = 10  # 子弹伤害
+        
         self.set_mode(PlayerMode.SHM)
         
     def apply_powerup_effect(self, powerup_type: PowerUpType) -> None:
@@ -88,6 +98,9 @@ class Player(Entity):
         elif mode == PlayerMode.REVERSE:
             self.reset_vals_reverse()
             self.config.sounds.wing.play()
+        elif mode == PlayerMode.BOSS:
+            self.reset_vals_boss()
+            self.config.sounds.wing.play()
         elif mode == PlayerMode.CRASH:
             self.stop_wings()
             self.config.sounds.hit.play()
@@ -123,6 +136,26 @@ class Player(Entity):
 
         self.flap_acc = 9  # 反向的拍打加速度
         self.flapped = False  # 拍打状态
+        
+    def reset_vals_boss(self) -> None:
+        """设置Boss模式下的值"""
+        # 与正常模式类似但速度较慢
+        self.vel_y = -6  # 初始速度
+        self.max_vel_y = 8  # 最大下降速度
+        self.min_vel_y = -6  # 最小上升速度
+        self.acc_y = 0.8  # 重力加速度
+
+        self.rot = 60  # 初始旋转角度
+        self.vel_rot = -2  # 旋转速度
+        self.rot_min = -60  # 最小旋转角度
+        self.rot_max = 15  # 最大旋转角度
+
+        self.flap_acc = -7  # 拍打加速度
+        self.flapped = False  # 拍打状态
+        
+        # 重置子弹
+        self.bullets = []
+        self.bullet_cooldown = 0
 
     def reset_vals_shm(self) -> None:
         self.vel_y = 1  # player's velocity along Y axis
@@ -189,6 +222,29 @@ class Player(Entity):
         adjusted_vel_y = self.vel_y * self.speed_modifier
         self.y = clamp(self.y + adjusted_vel_y, self.min_y, self.max_y)
         self.rotate()
+        
+    def tick_boss(self) -> None:
+        """Boss模式的更新逻辑"""
+        # 类似正常模式的移动
+        if self.vel_y < self.max_vel_y and not self.flapped:
+            self.vel_y += self.acc_y
+        if self.flapped:
+            self.flapped = False
+
+        # 应用速度修改器
+        adjusted_vel_y = self.vel_y * self.speed_modifier
+        self.y = clamp(self.y + adjusted_vel_y, self.min_y, self.max_y)
+        self.rotate()
+        
+        # 更新子弹冷却时间
+        self.bullet_cooldown += 1
+        
+        # 更新并绘制子弹
+        for bullet in list(self.bullets):
+            bullet.tick()
+            # 移除超出屏幕的子弹
+            if bullet.is_out_of_screen():
+                self.bullets.remove(bullet)
 
     def tick_crash(self) -> None:
         if self.min_y <= self.y <= self.max_y:
@@ -198,7 +254,7 @@ class Player(Entity):
                 self.rotate()
 
         # player velocity change
-        if self.vel_y < self.max_vel_y:
+        if self.vel_y < 15:
             self.vel_y += self.acc_y
 
     def rotate(self) -> None:
@@ -212,81 +268,102 @@ class Player(Entity):
             self.tick_normal()
         elif self.mode == PlayerMode.REVERSE:
             self.tick_reverse()
+        elif self.mode == PlayerMode.BOSS:
+            self.tick_boss()
         elif self.mode == PlayerMode.CRASH:
             self.tick_crash()
-
+        
         self.draw_player()
 
     def draw_player(self) -> None:
-        rotated_image = pygame.transform.rotate(self.image, self.rot)
-        rotated_rect = rotated_image.get_rect(center=self.rect.center)
+        # Rotate bird for normal mode bird and crashed bird (in air)
+        if (
+            self.mode == PlayerMode.NORMAL
+            or self.mode == PlayerMode.REVERSE
+            or self.mode == PlayerMode.BOSS
+            or (self.mode == PlayerMode.CRASH and self.y < self.max_y - 30)
+        ):
+            rotation = self.rot if self.mode != PlayerMode.REVERSE else -self.rot
+            # pygame.transform.rotate rotates clockwise (opposite of what we want)
+            img = pygame.transform.rotate(self.image, rotation)
+            rotated_rect = img.get_rect(center=(self.x + self.w // 2, self.y + self.h // 2))
+            self.config.screen.blit(img, rotated_rect)
+        # For crashed bird on ground or message bird
+        else:
+            self.config.screen.blit(self.image, (self.x, self.y))
+    
+    def shoot(self) -> None:
+        """玩家发射子弹"""
+        # 检查是否可以发射子弹
+        if self.bullet_cooldown < self.bullet_rate:
+            return
+            
+        # 重置冷却时间
+        self.bullet_cooldown = 0
         
-        # 无敌状态时添加闪烁效果
-        if self.invincible and pygame.time.get_ticks() % 200 < 100:
-            # 创建一个带有透明度的副本
-            alpha_image = rotated_image.copy()
-            alpha_image.set_alpha(150)
-            self.config.screen.blit(alpha_image, rotated_rect)
-            
-            # 添加光环效果
-            glow_size = max(rotated_rect.width, rotated_rect.height) + 10
-            glow_surface = pygame.Surface((glow_size, glow_size), pygame.SRCALPHA)
-            pygame.draw.circle(
-                glow_surface, 
-                (255, 215, 0, 100),  # 金色光环
-                (glow_size//2, glow_size//2), 
-                glow_size//2
-            )
-            glow_rect = glow_surface.get_rect(center=rotated_rect.center)
-            self.config.screen.blit(glow_surface, glow_rect)
-            
-        # 绘制玩家
-        self.config.screen.blit(rotated_image, rotated_rect)
+        # 从玩家位置发射子弹
+        bullet_x = self.x + self.w
+        bullet_y = self.y + self.h // 2 - 4  # 稍微调整位置使其从鸟嘴部发射
+        
+        # 创建子弹
+        bullet = Bullet(self.config, bullet_x, bullet_y)
+        self.bullets.append(bullet)
+        
+        # 播放声音效果
+        self.config.sounds.swoosh.play()
 
     def stop_wings(self) -> None:
-        self.img_gen = cycle([self.img_idx])
+        self.img_gen = cycle([0])
 
     def flap(self) -> None:
-        if self.mode == PlayerMode.REVERSE:
-            # 反向模式下的拍打逻辑
-            if self.y < self.max_y:
-                self.vel_y = self.flap_acc  # 向下加速
-                self.flapped = True
-                self.rot = -80  # 反向旋转
-                self.config.sounds.wing.play()
-        else:
-            # 正常模式下的拍打逻辑
-            if self.y > self.min_y:
+        if self.mode != PlayerMode.CRASH:
+            if self.mode == PlayerMode.REVERSE:
+                # 反向模式下的拍打
                 self.vel_y = self.flap_acc
-                self.flapped = True
+            else:
+                # 正常模式或Boss模式下的拍打
+                self.vel_y = self.flap_acc
+            
+            self.flapped = True
+            # 重置旋转值
+            if self.mode == PlayerMode.NORMAL or self.mode == PlayerMode.BOSS:
                 self.rot = 80
-                self.config.sounds.wing.play()
+            elif self.mode == PlayerMode.REVERSE:
+                self.rot = -80
 
     def crossed(self, pipe: Pipe) -> bool:
-        return pipe.cx <= self.cx < pipe.cx - pipe.vel_x
+        return pipe.x < self.x < pipe.x + pipe.w
 
     def collided(self, pipes: Pipes, floor: Floor) -> bool:
-        """returns True if player collides with floor or pipes."""
-        
-        # 如果处于无敌状态，不检测碰撞
-        if self.invincible:
-            return False
-
-        # if player crashes into ground
-        if self.collide(floor):
-            self.crashed = True
+        """检查是否与管道或地板发生碰撞"""
+        if (
+            self.y + self.h >= floor.y - 1  # bird on floor
+            or self.y < 0  # bird above viewport
+        ):
             self.crash_entity = "floor"
             return True
 
-        for pipe in pipes.upper:
+        for pipe in pipes.upper + pipes.lower:
             if self.collide(pipe):
-                self.crashed = True
-                self.crash_entity = "pipe"
-                return True
-        for pipe in pipes.lower:
-            if self.collide(pipe):
-                self.crashed = True
                 self.crash_entity = "pipe"
                 return True
 
+        return False
+        
+    def check_boss_bullet_collision(self, boss) -> bool:
+        """检查是否与Boss的子弹碰撞"""
+        for bullet in list(boss.bullets):
+            if self.collide(bullet):
+                boss.bullets.remove(bullet)
+                if not self.invincible:
+                    return True
+        return False
+        
+    def check_bullet_hit_boss(self, boss) -> None:
+        """检查玩家的子弹是否击中Boss"""
+        for bullet in list(self.bullets):
+            if bullet.collide(boss):
+                self.bullets.remove(bullet)
+                boss.take_damage(self.bullet_damage)
+                return True
         return False

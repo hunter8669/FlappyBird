@@ -15,6 +15,8 @@ from .entities import (
     WelcomeMessage,
 )
 from .entities.powerup import PowerUpManager, PowerUpType
+from .entities.boss import Boss
+from .entities.bullet import Bullet
 from .utils import GameConfig, Images, Sounds, Window
 from enum import Enum
 
@@ -24,6 +26,7 @@ class GameMode(Enum):
     CLASSIC = "经典模式"    # 经典无限模式
     TIMED = "限时挑战"      # 限时挑战模式
     REVERSE = "反向模式"    # 重力反转模式
+    BOSS = "打BOSS模式"     # BOSS战模式
 
 
 class Flappy:
@@ -52,6 +55,9 @@ class Flappy:
         self.game_mode = GameMode.CLASSIC  # 默认为经典模式
         self.time_limit = 60 * 1000  # 限时模式的时间限制（毫秒）
         self.time_remaining = self.time_limit  # 剩余时间
+        
+        # Boss相关
+        self.boss = None  # Boss对象
 
     async def start(self):
         """
@@ -86,6 +92,7 @@ class Flappy:
         classic_text = mode_font.render("Classic Mode", True, (255, 255, 255))
         timed_text = mode_font.render("Timed Challenge", True, (255, 255, 255))
         reverse_text = mode_font.render("Reverse Mode", True, (255, 255, 255))  # 添加反向模式文本
+        boss_text = mode_font.render("Boss Mode", True, (255, 255, 255))  # 添加Boss模式文本
         instruction_text = instruction_font.render("UP/DOWN to select, SPACE to start", True, (220, 220, 220))
         
         # 为选择框准备颜色和大小
@@ -93,13 +100,15 @@ class Flappy:
         box_color_inactive = (100, 100, 100, 128)  # 非活跃选择的颜色
         
         # 计算文本位置 - 调整间距使界面更加平衡
-        title_pos = (self.config.window.width//2 - title_text.get_width()//2, self.config.window.height//2 - 50)  # 调整标题位置
+        title_pos = (self.config.window.width//2 - title_text.get_width()//2, self.config.window.height//2 - 100)  # 调整标题位置
         classic_pos = (self.config.window.width//2 - classic_text.get_width()//2, 
-                      self.config.window.height//2 + 20)  # 调整经典模式位置
+                      self.config.window.height//2 - 30)  # 调整经典模式位置
         timed_pos = (self.config.window.width//2 - timed_text.get_width()//2, 
-                    self.config.window.height//2 + 70)  # 调整限时模式位置
+                    self.config.window.height//2 + 20)  # 调整限时模式位置
         reverse_pos = (self.config.window.width//2 - reverse_text.get_width()//2, 
-                      self.config.window.height//2 + 120)  # 添加反向模式位置
+                      self.config.window.height//2 + 70)  # 添加反向模式位置
+        boss_pos = (self.config.window.width//2 - boss_text.get_width()//2, 
+                   self.config.window.height//2 + 120)  # 添加Boss模式位置
         instruction_pos = (self.config.window.width//2 - instruction_text.get_width()//2, 
                           self.config.window.height//2 + 180)  # 调整指示文本位置
         
@@ -110,10 +119,12 @@ class Flappy:
                                timed_text.get_width() + 40, timed_text.get_height() + 20)
         reverse_rect = pygame.Rect(reverse_pos[0] - 20, reverse_pos[1] - 10, 
                                  reverse_text.get_width() + 40, reverse_text.get_height() + 20)  # 添加反向模式矩形
+        boss_rect = pygame.Rect(boss_pos[0] - 20, boss_pos[1] - 10, 
+                              boss_text.get_width() + 40, boss_text.get_height() + 20)  # 添加Boss模式矩形
         
         # 默认选择经典模式
         self.game_mode = GameMode.CLASSIC
-        selected_index = 0  # 0表示经典模式，1表示限时模式，2表示反向模式
+        selected_index = 0  # 0表示经典模式，1表示限时模式，2表示反向模式，3表示Boss模式
 
         while True:
             for event in pygame.event.get():
@@ -123,7 +134,7 @@ class Flappy:
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_DOWN:
                         # 向下切换模式
-                        selected_index = (selected_index + 1) % 3  # 循环切换三种模式
+                        selected_index = (selected_index + 1) % 4  # 循环切换四种模式
                         if selected_index == 0:
                             self.game_mode = GameMode.CLASSIC
                         elif selected_index == 1:
@@ -132,10 +143,12 @@ class Flappy:
                             self.time_remaining = self.time_limit
                         elif selected_index == 2:
                             self.game_mode = GameMode.REVERSE
+                        elif selected_index == 3:
+                            self.game_mode = GameMode.BOSS
                         self.config.sounds.swoosh.play()
                     elif event.key == pygame.K_UP:
                         # 向上切换模式
-                        selected_index = (selected_index - 1) % 3  # 循环切换三种模式
+                        selected_index = (selected_index - 1) % 4  # 循环切换四种模式
                         if selected_index == 0:
                             self.game_mode = GameMode.CLASSIC
                         elif selected_index == 1:
@@ -144,6 +157,8 @@ class Flappy:
                             self.time_remaining = self.time_limit
                         elif selected_index == 2:
                             self.game_mode = GameMode.REVERSE
+                        elif selected_index == 3:
+                            self.game_mode = GameMode.BOSS
                         self.config.sounds.swoosh.play()
                 
                 # 空格或上箭头开始游戏
@@ -188,11 +203,22 @@ class Flappy:
                 # 非活跃按钮
                 pygame.draw.rect(self.config.screen, (30, 30, 30), reverse_rect)  # 浅色填充
                 pygame.draw.rect(self.config.screen, box_color_inactive, reverse_rect, 2, border_radius=5)  # 边框
+                
+            # 绘制Boss模式按钮
+            if selected_index == 3:
+                # 活跃按钮
+                pygame.draw.rect(self.config.screen, (50, 50, 50), boss_rect)  # 深色填充
+                pygame.draw.rect(self.config.screen, box_color_active, boss_rect, 3, border_radius=5)  # 边框
+            else:
+                # 非活跃按钮
+                pygame.draw.rect(self.config.screen, (30, 30, 30), boss_rect)  # 浅色填充
+                pygame.draw.rect(self.config.screen, box_color_inactive, boss_rect, 2, border_radius=5)  # 边框
             
             # 绘制文本
             self.config.screen.blit(classic_text, classic_pos)
             self.config.screen.blit(timed_text, timed_pos)
             self.config.screen.blit(reverse_text, reverse_pos)
+            self.config.screen.blit(boss_text, boss_pos)
             self.config.screen.blit(instruction_text, instruction_pos)
             
             pygame.display.update()  # 刷新显示
@@ -336,6 +362,11 @@ class Flappy:
         # 根据游戏模式设置玩家模式
         if self.game_mode == GameMode.REVERSE:
             self.player.set_mode(PlayerMode.REVERSE)  # 设置玩家模式为REVERSE（反向模式）
+        elif self.game_mode == GameMode.BOSS:
+            self.player.set_mode(PlayerMode.BOSS)  # 设置玩家模式为BOSS（Boss模式）
+            self.boss = Boss(self.config)  # 创建Boss实体
+            self.pipes.upper.clear()  # 清空管道
+            self.pipes.lower.clear()  # 清空管道
         else:
             self.player.set_mode(PlayerMode.NORMAL)  # 设置玩家模式为NORMAL（正常模式）
             
@@ -360,6 +391,9 @@ class Flappy:
                 self.check_quit_event(event)  # 检查退出事件
                 if self.is_tap_event(event):
                     self.player.flap()  # 玩家点击，执行拍打动作
+                    # Boss模式下，空格键也用于射击
+                    if self.game_mode == GameMode.BOSS:
+                        self.player.shoot()
 
             # 限时模式时间更新
             if self.game_mode == GameMode.TIMED:
@@ -378,13 +412,60 @@ class Flappy:
             self.update_player_effects()
             
             # 检查管道通过情况并更新分数
-            self.check_pipe_pass()
+            if self.game_mode != GameMode.BOSS:
+                self.check_pipe_pass()
 
             self.background.tick()  # 更新背景
             self.floor.tick()  # 更新地面
-            self.pipes.tick()  # 更新管道
+            
+            # Boss模式下不渲染管道
+            if self.game_mode != GameMode.BOSS:
+                self.pipes.tick()  # 更新管道
+                
             self.score.tick()  # 更新得分
             self.player.tick()  # 更新玩家
+            
+            # Boss模式特有的逻辑
+            if self.game_mode == GameMode.BOSS:
+                # 更新Boss
+                self.boss.tick()
+                
+                # 检查玩家子弹是否击中Boss
+                if self.player.check_bullet_hit_boss(self.boss):
+                    # 增加分数
+                    self.score.add()
+                    
+                # 检查Boss是否被击败
+                if self.boss.is_defeated():
+                    # Boss被击败，显示胜利信息
+                    victory_font = pygame.font.SysFont('microsoftyahei', 48)
+                    victory_text = victory_font.render("VICTORY!", True, (255, 215, 0))
+                    victory_rect = victory_text.get_rect(center=(self.config.window.width//2, self.config.window.height//2))
+                    
+                    # 绘制胜利信息
+                    for i in range(100):  # 显示约3秒
+                        self.background.tick()
+                        self.floor.tick()
+                        self.player.tick()
+                        
+                        # 添加一个半透明背景
+                        overlay = pygame.Surface((self.config.window.width, self.config.window.height), pygame.SRCALPHA)
+                        overlay.fill((0, 0, 0, 128))
+                        self.config.screen.blit(overlay, (0, 0))
+                        
+                        # 绘制胜利文本
+                        self.config.screen.blit(victory_text, victory_rect)
+                        
+                        pygame.display.update()
+                        await asyncio.sleep(0.03)
+                    
+                    # 跳过游戏结束画面，直接返回主菜单
+                    return
+                
+                # 检查玩家是否被Boss子弹击中
+                if self.player.check_boss_bullet_collision(self.boss):
+                    if not self.player.invincible:
+                        return  # 玩家死亡
             
             # 绘制道具
             for powerup in self.powerup_manager.powerups:
@@ -427,9 +508,14 @@ class Flappy:
             await asyncio.sleep(0)  # 等待下一帧
             self.config.tick()  # 更新游戏配置
             
-            # 玩家碰撞检测
-            if self.player.collided(self.pipes, self.floor):
-                return
+            # 玩家碰撞检测（Boss模式下不检测管道碰撞）
+            if self.game_mode != GameMode.BOSS:
+                if self.player.collided(self.pipes, self.floor):
+                    return
+            else:
+                # Boss模式下只检测与地板的碰撞
+                if self.player.y + self.player.h >= self.floor.y - 1 or self.player.y < 0:
+                    return
             
             # 限时模式结束
             if game_over:
@@ -440,8 +526,10 @@ class Flappy:
         玩家死亡并显示游戏结束界面
         """
         self.player.set_mode(PlayerMode.CRASH)  # 设置玩家模式为CRASH（死亡模式）
-        self.pipes.stop()  # 停止管道
-        self.floor.stop()  # 停止地面
+        if hasattr(self, 'pipes') and self.game_mode != GameMode.BOSS:
+            self.pipes.stop()  # 停止管道
+        if hasattr(self, 'floor'):
+            self.floor.stop()  # 停止地面
 
         while True:
             for event in pygame.event.get():
@@ -452,11 +540,14 @@ class Flappy:
 
             self.background.tick()  # 更新背景
             self.floor.tick()  # 更新地面
-            self.pipes.tick()  # 更新管道
+            
+            # Boss模式下不需要更新管道
+            if self.game_mode != GameMode.BOSS and hasattr(self, 'pipes'):
+                self.pipes.tick()  # 更新管道
+                
             self.score.tick()  # 更新得分
             self.player.tick()  # 更新玩家
             self.game_over_message.tick()  # 更新游戏结束信息
 
-            self.config.tick()  # 更新游戏配置
             pygame.display.update()  # 刷新显示
             await asyncio.sleep(0)  # 等待下一帧

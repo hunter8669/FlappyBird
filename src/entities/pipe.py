@@ -42,10 +42,10 @@ class Pipes(Entity):
             pipe.vel_x = 0  # 停止管道移动
 
     def can_spawn_pipes(self) -> bool:
-        last = self.upper[-1]  # 获取最后一个上方管道
-        if not last:
+        if not self.upper:  # 如果管道列表为空
             return True
-
+        
+        last = self.upper[-1]  # 获取最后一个上方管道
         return self.config.window.width - (last.x + last.w) > last.w * 2.5  # 检查是否可以生成新管道
 
     def spawn_new_pipes(self):

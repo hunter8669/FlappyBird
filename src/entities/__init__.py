@@ -6,6 +6,8 @@ from .pipe import Pipe, Pipes
 from .player import Player, PlayerMode
 from .score import Score
 from .welcome_message import WelcomeMessage
+from .boss import Boss
+from .bullet import Bullet
 
 __all__ = [
     "Background",  # 游戏背景
@@ -16,4 +18,8 @@ __all__ = [
     "Score",  # 分数
     "Entity",  # 基类
     "WelcomeMessage",  # 欢迎信息
+    "GameOver",  # 游戏结束信息
+    "Boss",  # Boss
+    "Bullet",  # 子弹
+    "PlayerMode",  # 玩家模式
 ]
