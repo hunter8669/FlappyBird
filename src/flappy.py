@@ -2,7 +2,7 @@ import asyncio
 import sys
 
 import pygame
-from pygame.locals import K_ESCAPE, K_SPACE, K_UP, KEYDOWN, QUIT
+from pygame.locals import K_ESCAPE, K_SPACE, K_UP, KEYDOWN, QUIT, K_q, K_e, K_1, K_2, K_3, K_4
 
 from .entities import (
     Background,
@@ -15,8 +15,9 @@ from .entities import (
     WelcomeMessage,
 )
 from .entities.powerup import PowerUpManager, PowerUpType
-from .entities.boss import Boss
+from .entities.boss import Boss, BossType
 from .entities.bullet import Bullet
+from .entities.weapon import WeaponType
 from .utils import GameConfig, Images, Sounds, Window
 from enum import Enum
 
@@ -57,6 +58,7 @@ class Flappy:
         self.time_remaining = self.time_limit  # 剩余时间
         
         # Boss相关
+        self.boss_level = 0  # 当前Boss等级
         self.boss = None  # Boss对象
 
     async def start(self):
@@ -78,7 +80,7 @@ class Flappy:
 
     async def splash(self):
         """
-        显示欢迎界面动画
+        显示欢迎界面和模式选择
         """
         self.player.set_mode(PlayerMode.SHM)  # 设置玩家模式为SHM（静止模式）
         
@@ -364,7 +366,7 @@ class Flappy:
             self.player.set_mode(PlayerMode.REVERSE)  # 设置玩家模式为REVERSE（反向模式）
         elif self.game_mode == GameMode.BOSS:
             self.player.set_mode(PlayerMode.BOSS)  # 设置玩家模式为BOSS（Boss模式）
-            self.boss = Boss(self.config)  # 创建Boss实体
+            self.create_boss()  # 创建初始Boss实体
             self.pipes.upper.clear()  # 清空管道
             self.pipes.lower.clear()  # 清空管道
         else:
@@ -394,6 +396,25 @@ class Flappy:
                     # Boss模式下，空格键也用于射击
                     if self.game_mode == GameMode.BOSS:
                         self.player.shoot()
+                
+                # 添加键盘事件处理
+                if event.type == KEYDOWN:
+                    # 武器切换 - Q/E键
+                    if event.key == K_q and self.game_mode == GameMode.BOSS:
+                        self.player.switch_weapon(-1)  # 上一个武器
+                    elif event.key == K_e and self.game_mode == GameMode.BOSS:
+                        self.player.switch_weapon(1)   # 下一个武器
+                    
+                    # 数字键1-4直接选择武器
+                    if self.game_mode == GameMode.BOSS:
+                        if event.key == K_1 and len(self.player.weapons) > 0:
+                            self.player.current_weapon_index = 0
+                        elif event.key == K_2 and len(self.player.weapons) > 1:
+                            self.player.current_weapon_index = 1
+                        elif event.key == K_3 and len(self.player.weapons) > 2:
+                            self.player.current_weapon_index = 2
+                        elif event.key == K_4 and len(self.player.weapons) > 3:
+                            self.player.current_weapon_index = 3
 
             # 限时模式时间更新
             if self.game_mode == GameMode.TIMED:
@@ -435,32 +456,43 @@ class Flappy:
                     # 增加分数
                     self.score.add()
                     
+                # 检查是否应该进化Boss
+                self.evolve_boss()
+                    
                 # 检查Boss是否被击败
                 if self.boss.is_defeated():
-                    # Boss被击败，显示胜利信息
-                    victory_font = pygame.font.SysFont('microsoftyahei', 48)
-                    victory_text = victory_font.render("VICTORY!", True, (255, 215, 0))
-                    victory_rect = victory_text.get_rect(center=(self.config.window.width//2, self.config.window.height//2))
+                    # 增加Boss等级
+                    self.boss_level += 1
                     
-                    # 绘制胜利信息
-                    for i in range(100):  # 显示约3秒
-                        self.background.tick()
-                        self.floor.tick()
-                        self.player.tick()
+                    # 检查是否击败了所有Boss
+                    if self.boss_level >= 4:  # 已经打败了所有4种Boss
+                        # Boss被击败，显示胜利信息
+                        victory_font = pygame.font.SysFont('microsoftyahei', 48)
+                        victory_text = victory_font.render("完全胜利！", True, (255, 215, 0))
+                        victory_rect = victory_text.get_rect(center=(self.config.window.width//2, self.config.window.height//2))
                         
-                        # 添加一个半透明背景
-                        overlay = pygame.Surface((self.config.window.width, self.config.window.height), pygame.SRCALPHA)
-                        overlay.fill((0, 0, 0, 128))
-                        self.config.screen.blit(overlay, (0, 0))
+                        # 绘制胜利信息
+                        for i in range(100):  # 显示约3秒
+                            self.background.tick()
+                            self.floor.tick()
+                            self.player.tick()
+                            
+                            # 添加一个半透明背景
+                            overlay = pygame.Surface((self.config.window.width, self.config.window.height), pygame.SRCALPHA)
+                            overlay.fill((0, 0, 0, 128))
+                            self.config.screen.blit(overlay, (0, 0))
+                            
+                            # 绘制胜利文本
+                            self.config.screen.blit(victory_text, victory_rect)
+                            
+                            pygame.display.update()
+                            await asyncio.sleep(0.03)
                         
-                        # 绘制胜利文本
-                        self.config.screen.blit(victory_text, victory_rect)
-                        
-                        pygame.display.update()
-                        await asyncio.sleep(0.03)
-                    
-                    # 跳过游戏结束画面，直接返回主菜单
-                    return
+                        # 跳过游戏结束画面，直接返回主菜单
+                        return
+                    else:
+                        # 创建下一个Boss
+                        await self.next_boss()
                 
                 # 检查玩家是否被Boss子弹击中
                 if self.player.check_boss_bullet_collision(self.boss):
@@ -551,3 +583,79 @@ class Flappy:
 
             pygame.display.update()  # 刷新显示
             await asyncio.sleep(0)  # 等待下一帧
+
+    def create_boss(self):
+        """创建对应等级的Boss"""
+        if self.boss_level == 0:
+            self.boss = Boss(self.config, BossType.NORMAL)
+        elif self.boss_level == 1:
+            self.boss = Boss(self.config, BossType.SPEEDY)
+        elif self.boss_level == 2:
+            self.boss = Boss(self.config, BossType.SPLITTER)
+        elif self.boss_level == 3:
+            self.boss = Boss(self.config, BossType.TANK)
+    
+    def evolve_boss(self):
+        """根据得分演化Boss的难度"""
+        # 仅当Boss生命低于一定比例时，增加其攻击频率
+        if self.boss.health < self.boss.max_health * 0.5:
+            if self.boss.boss_type == BossType.NORMAL:
+                if self.boss.bullet_rate > 45:  # 不要让它变得太快
+                    self.boss.bullet_rate -= 1
+                    
+            elif self.boss.boss_type == BossType.SPEEDY:
+                if self.boss.bullet_rate > 20:
+                    self.boss.bullet_rate -= 1
+                    
+            elif self.boss.boss_type == BossType.SPLITTER:
+                if self.boss.bullet_rate > 70:
+                    self.boss.bullet_rate -= 1
+                    
+            elif self.boss.boss_type == BossType.TANK:
+                if self.boss.bullet_rate > 100:
+                    self.boss.bullet_rate -= 1
+    
+    async def next_boss(self):
+        """显示Boss转场动画并创建下一个Boss"""
+        # 创建动画字体
+        font = pygame.font.SysFont('microsoftyahei', 36)
+        
+        # 根据下一个Boss类型显示文本
+        if self.boss_level == 1:
+            text = font.render("速度型Boss出现！", True, (0, 0, 255))
+        elif self.boss_level == 2:
+            text = font.render("分裂型Boss出现！", True, (0, 255, 0))
+        elif self.boss_level == 3:
+            text = font.render("坦克型Boss出现！最终挑战！", True, (128, 0, 128))
+        
+        rect = text.get_rect(center=(self.config.window.width//2, self.config.window.height//2))
+        
+        # 显示过渡动画
+        for i in range(60):  # 约2秒
+            # 绘制游戏元素
+            self.background.tick()
+            self.floor.tick()
+            self.player.tick()
+            
+            # 添加半透明背景
+            overlay = pygame.Surface((self.config.window.width, self.config.window.height), pygame.SRCALPHA)
+            overlay.fill((0, 0, 0, 128))
+            self.config.screen.blit(overlay, (0, 0))
+            
+            # 绘制文本
+            self.config.screen.blit(text, rect)
+            
+            pygame.display.update()
+            await asyncio.sleep(0.03)
+        
+        # 创建新Boss
+        self.create_boss()
+        
+        # 更新玩家 - 恢复一些武器弹药
+        for weapon in self.player.weapons:
+            if weapon.weapon_type == WeaponType.TRIPLE and weapon.ammo < 15:
+                weapon.ammo = 15
+            elif weapon.weapon_type == WeaponType.LASER and weapon.ammo < 50:
+                weapon.ammo = 50
+            elif weapon.weapon_type == WeaponType.HOMING and weapon.ammo < 5:
+                weapon.ammo = 5

@@ -10,6 +10,7 @@ from .floor import Floor
 from .pipe import Pipe, Pipes
 from .powerup import PowerUpType
 from .bullet import Bullet
+from .weapon import Weapon, WeaponType
 
 
 class PlayerMode(Enum):
@@ -47,6 +48,18 @@ class Player(Entity):
         self.bullet_cooldown = 0  # 子弹冷却时间
         self.bullet_rate = 20  # 多少帧发射一次子弹
         self.bullet_damage = 10  # 子弹伤害
+        
+        # 武器系统
+        self.weapons = [
+            Weapon(config, WeaponType.NORMAL),
+            Weapon(config, WeaponType.TRIPLE),
+            Weapon(config, WeaponType.LASER),
+            Weapon(config, WeaponType.HOMING)
+        ]
+        self.current_weapon_index = 0
+        
+        # 添加弹药显示
+        self.bullet_ui_pos = (10, config.window.height - 40)
         
         self.set_mode(PlayerMode.SHM)
         
@@ -156,6 +169,18 @@ class Player(Entity):
         # 重置子弹
         self.bullets = []
         self.bullet_cooldown = 0
+        self.boss_target = None  # 存储Boss引用，用于追踪弹
+        
+        # 重置武器弹药
+        for weapon in self.weapons:
+            if weapon.weapon_type == WeaponType.NORMAL:
+                weapon.ammo = -1  # 无限弹药
+            elif weapon.weapon_type == WeaponType.TRIPLE:
+                weapon.ammo = 30
+            elif weapon.weapon_type == WeaponType.LASER:
+                weapon.ammo = 100
+            elif weapon.weapon_type == WeaponType.HOMING:
+                weapon.ammo = 10
 
     def reset_vals_shm(self) -> None:
         self.vel_y = 1  # player's velocity along Y axis
@@ -236,15 +261,14 @@ class Player(Entity):
         self.y = clamp(self.y + adjusted_vel_y, self.min_y, self.max_y)
         self.rotate()
         
-        # 更新子弹冷却时间
-        self.bullet_cooldown += 1
+        # 更新武器冷却时间
+        self.update_weapons()
         
         # 更新并绘制子弹
-        for bullet in list(self.bullets):
-            bullet.tick()
-            # 移除超出屏幕的子弹
-            if bullet.is_out_of_screen():
-                self.bullets.remove(bullet)
+        self.update_bullets()
+        
+        # 绘制武器UI
+        self.draw_weapon_ui()
 
     def tick_crash(self) -> None:
         if self.min_y <= self.y <= self.max_y:
@@ -294,20 +318,20 @@ class Player(Entity):
     
     def shoot(self) -> None:
         """玩家发射子弹"""
-        # 检查是否可以发射子弹
-        if self.bullet_cooldown < self.bullet_rate:
+        weapon = self.weapons[self.current_weapon_index]
+        
+        if not weapon.can_fire():
             return
             
-        # 重置冷却时间
-        self.bullet_cooldown = 0
+        # 使用当前武器开火
+        new_bullets = weapon.fire(
+            self.x + self.w,
+            self.y + self.h // 2 - 4,
+            target=self.boss_target  # 用于追踪弹
+        )
         
-        # 从玩家位置发射子弹
-        bullet_x = self.x + self.w
-        bullet_y = self.y + self.h // 2 - 4  # 稍微调整位置使其从鸟嘴部发射
-        
-        # 创建子弹
-        bullet = Bullet(self.config, bullet_x, bullet_y)
-        self.bullets.append(bullet)
+        # 添加到子弹列表
+        self.bullets.extend(new_bullets)
         
         # 播放声音效果
         self.config.sounds.swoosh.play()
@@ -359,11 +383,68 @@ class Player(Entity):
                     return True
         return False
         
-    def check_bullet_hit_boss(self, boss) -> None:
+    def check_bullet_hit_boss(self, boss) -> bool:
         """检查玩家的子弹是否击中Boss"""
+        # 存储Boss引用以便追踪导弹使用
+        self.boss_target = boss
+        
         for bullet in list(self.bullets):
             if bullet.collide(boss):
                 self.bullets.remove(bullet)
-                boss.take_damage(self.bullet_damage)
+                boss.take_damage(bullet.damage if hasattr(bullet, 'damage') else self.bullet_damage)
                 return True
         return False
+
+    def update_weapons(self):
+        """更新所有武器状态"""
+        for weapon in self.weapons:
+            weapon.update()
+    
+    def update_bullets(self):
+        """更新并绘制所有子弹"""
+        for bullet in list(self.bullets):
+            if hasattr(bullet, 'is_homing') and bullet.is_homing:
+                # 更新追踪弹的目标
+                bullet.target = self.boss_target
+                
+            bullet.tick()
+            # 移除超出屏幕的子弹
+            if bullet.is_out_of_screen():
+                self.bullets.remove(bullet)
+    
+    def draw_weapon_ui(self):
+        """绘制当前武器信息UI"""
+        weapon = self.weapons[self.current_weapon_index]
+        
+        # 创建武器信息背景
+        bg_width = 150
+        bg_height = 50
+        bg = pygame.Surface((bg_width, bg_height), pygame.SRCALPHA)
+        bg.fill((0, 0, 0, 180))
+        
+        self.config.screen.blit(bg, self.bullet_ui_pos)
+        
+        # 显示武器名称
+        font = pygame.font.SysFont('microsoftyahei', 14)
+        name_text = font.render(f"武器: {weapon.weapon_type.value}", True, weapon.color)
+        self.config.screen.blit(name_text, (self.bullet_ui_pos[0] + 10, self.bullet_ui_pos[1] + 10))
+        
+        # 显示弹药信息
+        ammo_text = "无限" if weapon.ammo < 0 else f"{weapon.ammo}"
+        ammo_surface = font.render(f"弹药: {ammo_text}", True, (255, 255, 255))
+        self.config.screen.blit(ammo_surface, (self.bullet_ui_pos[0] + 10, self.bullet_ui_pos[1] + 30))
+        
+        # 显示切换提示
+        small_font = pygame.font.SysFont('microsoftyahei', 10)
+        hint_text = small_font.render("按Q/E切换武器", True, (200, 200, 200))
+        self.config.screen.blit(hint_text, (self.bullet_ui_pos[0] + 10, self.bullet_ui_pos[1] + 45))
+    
+    def switch_weapon(self, direction: int) -> None:
+        """切换武器 (1: 下一个, -1: 上一个)"""
+        self.current_weapon_index = (self.current_weapon_index + direction) % len(self.weapons)
+        
+        # 更新子弹伤害值
+        self.bullet_damage = self.weapons[self.current_weapon_index].damage
+        
+        # 播放切换音效
+        self.config.sounds.swoosh.play()
