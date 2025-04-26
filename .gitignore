@@ -180,4 +180,7 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# 不相关的文件
+软件项目管理大作业范例--火灾救助系统.docx
 >>>>>>> 797bb44baf1ef5f55bbab50532b133a00fe2ba84
