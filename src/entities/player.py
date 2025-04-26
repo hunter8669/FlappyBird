@@ -25,29 +25,30 @@ class PlayerMode(Enum):
 
 class Player(Entity):
     def __init__(self, config: GameConfig) -> None:
-        image = config.images.player[0]
+        self.config = config
+        images = config.images.player  # 获取玩家图像
+
+        # 根据模式设置当前图像
         x = int(config.window.width * 0.2)
-        y = int((config.window.height - image.get_height()) / 2)
-        super().__init__(config, image, x, y)
-        self.min_y = -2 * self.h
-        self.max_y = config.window.viewport_height - self.h * 0.75
-        self.img_idx = 0
-        self.img_gen = cycle([0, 1, 2, 1])
-        self.frame = 0
-        self.crashed = False
+        y = int((config.window.height - images[0].get_height()) / 2)
+
+        super().__init__(config, images[0], x, y)  # 初始化父类
+
+        # 设置碰撞的管道或地板
         self.crash_entity = None
-        # 道具效果相关属性
-        self.speed_modifier = 1.0  # 速度修改器
-        self.invincible = False    # 无敌状态
-        self.size_modifier = 1.0   # 大小修改器
-        self.original_image = None # 保存原始图像
-        self.is_reverse_mode = False  # 是否为反向模式
+
+        # 生成用于显示图像的索引
+        self.img_gen = self.generate_index()
+        next(self.img_gen)  # 初始化索引
+
+        # 速度修改器
+        self.speed_modifier = 1.0
+        self.size_modifier = 1.0  # 大小修改器
         
-        # 子弹相关
-        self.bullets: List[Bullet] = []  # 玩家发射的子弹
-        self.bullet_cooldown = 0  # 子弹冷却时间
-        self.bullet_rate = 20  # 多少帧发射一次子弹
-        self.bullet_damage = 10  # 子弹伤害
+        # 子弹
+        self.bullets = []
+        self.bullet_damage = 10  # 默认伤害值
+        self.invincible = False  # 是否无敌
         
         # 武器系统
         self.weapons = [
@@ -57,97 +58,82 @@ class Player(Entity):
             Weapon(config, WeaponType.HOMING)
         ]
         self.current_weapon_index = 0
+        self.bullet_rate = 15  # 子弹发射冷却时间
+        self.bullet_cooldown = 0  # 当前冷却计时器
+        
+        # 爆炸特效
+        self.explosions = []
         
         # 添加弹药显示
         self.bullet_ui_pos = (10, config.window.height - 40)
-        
-        self.set_mode(PlayerMode.SHM)
-        
-    def apply_powerup_effect(self, powerup_type: PowerUpType) -> None:
-        """应用道具效果"""
-        if powerup_type == PowerUpType.SPEED_BOOST:
-            self.speed_modifier = 1.5
-        elif powerup_type == PowerUpType.INVINCIBLE:
-            self.invincible = True
-        elif powerup_type == PowerUpType.SLOW_MOTION:
-            self.speed_modifier = 0.5
-        elif powerup_type == PowerUpType.SMALL_SIZE:
-            # 缩小玩家
-            if self.size_modifier == 1.0:
-                self.original_image = self.image
-                self.size_modifier = 0.6
-                self._resize_player()
-    
-    def remove_powerup_effect(self, powerup_type: PowerUpType) -> None:
-        """移除道具效果"""
-        if powerup_type == PowerUpType.SPEED_BOOST or powerup_type == PowerUpType.SLOW_MOTION:
-            self.speed_modifier = 1.0
-        elif powerup_type == PowerUpType.INVINCIBLE:
-            self.invincible = False
-        elif powerup_type == PowerUpType.SMALL_SIZE:
-            if self.original_image:
-                self.size_modifier = 1.0
-                self.image = self.original_image
-                self.w = self.image.get_width()
-                self.h = self.image.get_height()
-                self.original_image = None
-    
-    def _resize_player(self) -> None:
-        """根据size_modifier调整玩家大小"""
-        if self.size_modifier != 1.0:
-            new_width = int(self.image.get_width() * self.size_modifier)
-            new_height = int(self.image.get_height() * self.size_modifier)
-            self.image = pygame.transform.scale(self.image, (new_width, new_height))
-            self.w = self.image.get_width()
-            self.h = self.image.get_height()
 
-    def set_mode(self, mode: PlayerMode) -> None:
+        # 设置值
+        self.min_y = -self.h - 10  # 最小y坐标
+        self.max_y = config.window.height - 1  # 最大y坐标
+
+        self.mode = PlayerMode.SHM  # 设置玩家模式为SHM（静止模式）
+        # 初始化索引
+        self.loopIter = 0
+        self.playerIndex = 0
+
+        # player velocity, max velocity, downward acceleration, acceleration on flap
+        self.reset_vals_shm()
+
+    def generate_index(self):
+        """生成用于循环显示图像的索引"""
+        while True:
+            for i in cycle([0, 1, 2, 1]):
+                yield i
+
+    def set_mode(self, mode: PlayerMode):
+        """设置玩家模式"""
+        if mode == self.mode:
+            return
+
+        # 记忆原始模式
+        self.old_mode = self.mode
         self.mode = mode
+
+        # 根据不同的模式设置不同的值
         if mode == PlayerMode.NORMAL:
             self.reset_vals_normal()
-            self.config.sounds.wing.play()
         elif mode == PlayerMode.SHM:
             self.reset_vals_shm()
         elif mode == PlayerMode.REVERSE:
             self.reset_vals_reverse()
-            self.config.sounds.wing.play()
         elif mode == PlayerMode.BOSS:
             self.reset_vals_boss()
-            self.config.sounds.wing.play()
         elif mode == PlayerMode.CRASH:
-            self.stop_wings()
-            self.config.sounds.hit.play()
-            if self.crash_entity == "pipe":
-                self.config.sounds.die.play()
             self.reset_vals_crash()
 
     def reset_vals_normal(self) -> None:
-        self.vel_y = -9  # player's velocity along Y axis
-        self.max_vel_y = 10  # max vel along Y, max descend speed
-        self.min_vel_y = -8  # min vel along Y, max ascend speed
-        self.acc_y = 1  # players downward acceleration
+        """设置正常模式下的值"""
+        self.vel_y = -9  # 初始速度
+        self.max_vel_y = 10  # 最大下降速度
+        self.min_vel_y = -8  # 最小上升速度
+        self.acc_y = 1  # 重力加速度
 
-        self.rot = 80  # player's current rotation
-        self.vel_rot = -3  # player's rotation speed
-        self.rot_min = -90  # player's min rotation angle
-        self.rot_max = 20  # player's max rotation angle
+        self.rot = 60  # 初始旋转角度
+        self.vel_rot = -3  # 旋转速度
+        self.rot_min = -90  # 最小旋转角度
+        self.rot_max = 20  # 最大旋转角度
 
-        self.flap_acc = -9  # players speed on flapping
-        self.flapped = False  # True when player flaps
-        
+        self.flap_acc = -9  # 拍打加速度
+        self.flapped = False  # 拍打状态
+
     def reset_vals_reverse(self) -> None:
-        # 反向模式下的初始化值
-        self.vel_y = 9  # 反向的初始速度（向下）
-        self.max_vel_y = 8  # 反向模式下的最大上升速度（实际是下降）
-        self.min_vel_y = -10  # 反向模式下的最小下降速度（实际是上升）
-        self.acc_y = -1  # 反向的重力加速度（向上）
+        """设置反向模式下的值"""
+        self.vel_y = 9  # 初始速度
+        self.max_vel_y = 8  # 最大下降速度
+        self.min_vel_y = -10  # 最小上升速度
+        self.acc_y = -1  # 重力加速度
 
-        self.rot = -80  # 反向的初始旋转角度
-        self.vel_rot = 3  # 反向的旋转速度
-        self.rot_min = -20  # 反向的最小旋转角度
-        self.rot_max = 90  # 反向的最大旋转角度
+        self.rot = -60  # 初始旋转角度
+        self.vel_rot = 3  # 旋转速度
+        self.rot_min = -20  # 最小旋转角度
+        self.rot_max = 90  # 最大旋转角度
 
-        self.flap_acc = 9  # 反向的拍打加速度
+        self.flap_acc = 9  # 拍打加速度
         self.flapped = False  # 拍打状态
         
     def reset_vals_boss(self) -> None:
@@ -202,28 +188,23 @@ class Player(Entity):
         self.max_vel_y = 15
         self.vel_rot = -8
 
-    def update_image(self):
-        self.frame += 1
-        if self.frame % 5 == 0:
-            self.img_idx = next(self.img_gen)
-            orig_image = self.config.images.player[self.img_idx]
-            
-            # 应用大小修改
-            if self.size_modifier != 1.0:
-                new_width = int(orig_image.get_width() * self.size_modifier)
-                new_height = int(orig_image.get_height() * self.size_modifier)
-                self.image = pygame.transform.scale(orig_image, (new_width, new_height))
-            else:
-                self.image = orig_image
-                
+    def update_image(self) -> None:
+        """更新玩家的图像"""
+        size_scale = getattr(self, 'size_modifier', 1.0)
+        if size_scale != 1.0:
+            # 应用缩放
+            idx = next(self.img_gen)
+            original_img = self.config.images.player[idx]
+            new_width = int(original_img.get_width() * size_scale)
+            new_height = int(original_img.get_height() * size_scale)
+            self.image = pygame.transform.scale(original_img, (new_width, new_height))
+            self.w = new_width
+            self.h = new_height
+        else:
+            # 正常大小
+            self.image = self.config.images.player[next(self.img_gen)]
             self.w = self.image.get_width()
             self.h = self.image.get_height()
-
-    def tick_shm(self) -> None:
-        if self.vel_y >= self.max_vel_y or self.vel_y <= self.min_vel_y:
-            self.acc_y *= -1
-        self.vel_y += self.acc_y
-        self.y += self.vel_y
 
     def tick_normal(self) -> None:
         if self.vel_y < self.max_vel_y and not self.flapped:
@@ -235,11 +216,11 @@ class Player(Entity):
         adjusted_vel_y = self.vel_y * self.speed_modifier
         self.y = clamp(self.y + adjusted_vel_y, self.min_y, self.max_y)
         self.rotate()
-        
+
     def tick_reverse(self) -> None:
-        # 反向模式的移动逻辑
+        """反向模式的更新逻辑"""
         if self.vel_y > self.min_vel_y and not self.flapped:
-            self.vel_y += self.acc_y  # 注意这里acc_y是负值，所以是减速
+            self.vel_y += self.acc_y
         if self.flapped:
             self.flapped = False
 
@@ -267,8 +248,104 @@ class Player(Entity):
         # 更新并绘制子弹
         self.update_bullets()
         
+        # 更新爆炸特效
+        self.update_explosions()
+        
         # 绘制武器UI
         self.draw_weapon_ui()
+    
+    def update_weapons(self):
+        """更新所有武器状态"""
+        for weapon in self.weapons:
+            weapon.update()
+    
+    def update_bullets(self):
+        """更新并绘制所有子弹"""
+        for bullet in list(self.bullets):
+            if hasattr(bullet, 'is_homing') and bullet.is_homing:
+                # 更新追踪弹的目标
+                bullet.target = self.boss_target
+                
+            bullet.tick()
+            # 移除超出屏幕的子弹
+            if bullet.is_out_of_screen():
+                self.bullets.remove(bullet)
+    
+    def draw_weapon_ui(self):
+        """绘制当前武器信息UI"""
+        weapon = self.weapons[self.current_weapon_index]
+        
+        # 创建武器信息背景
+        bg_width = 150
+        bg_height = 50
+        bg = pygame.Surface((bg_width, bg_height), pygame.SRCALPHA)
+        bg.fill((0, 0, 0, 180))
+        
+        self.config.screen.blit(bg, self.bullet_ui_pos)
+        
+        # 显示武器名称
+        font = pygame.font.SysFont('microsoftyahei', 14)
+        name_text = font.render(f"武器: {weapon.weapon_type.value}", True, weapon.color)
+        self.config.screen.blit(name_text, (self.bullet_ui_pos[0] + 10, self.bullet_ui_pos[1] + 10))
+        
+        # 显示弹药信息
+        ammo_text = "无限" if weapon.ammo < 0 else f"{weapon.ammo}"
+        ammo_surface = font.render(f"弹药: {ammo_text}", True, (255, 255, 255))
+        self.config.screen.blit(ammo_surface, (self.bullet_ui_pos[0] + 10, self.bullet_ui_pos[1] + 30))
+        
+        # 显示切换提示
+        small_font = pygame.font.SysFont('microsoftyahei', 10)
+        hint_text = small_font.render("按Q/E切换武器", True, (200, 200, 200))
+        self.config.screen.blit(hint_text, (self.bullet_ui_pos[0] + 10, self.bullet_ui_pos[1] + 45))
+
+    def update_explosions(self):
+        """更新并绘制爆炸特效"""
+        explosions_to_remove = []
+        
+        for explosion in self.explosions:
+            # 更新帧
+            explosion['frame'] += 0.2
+            
+            # 如果动画结束，标记为删除
+            if explosion['frame'] >= explosion['max_frame']:
+                explosions_to_remove.append(explosion)
+                continue
+                
+            # 绘制爆炸
+            size = explosion['size']
+            alpha = 255 * (1 - explosion['frame'] / explosion['max_frame'])
+            
+            # 创建爆炸表面
+            explosion_surf = pygame.Surface((size*2, size*2), pygame.SRCALPHA)
+            pygame.draw.circle(
+                explosion_surf, 
+                (255, 165, 0, alpha), 
+                (size, size), 
+                size * (1 - explosion['frame'] / explosion['max_frame'])
+            )
+            
+            # 绘制爆炸
+            self.config.screen.blit(
+                explosion_surf, 
+                (explosion['x'] - size, explosion['y'] - size)
+            )
+        
+        # 移除已完成的爆炸
+        for explosion in explosions_to_remove:
+            if explosion in self.explosions:
+                self.explosions.remove(explosion)
+
+    def tick_shm(self) -> None:
+        """有规律地上下移动玩家，用于显示欢迎界面"""
+        self.loopIter = (self.loopIter + 1) % 28
+        if self.loopIter == 0:
+            self.playerIndex = next(self.img_gen)
+            self.image = self.config.images.player[self.playerIndex]
+
+        if self.loopIter % 14 == 0:
+            self.vel_y = -self.vel_y
+
+        self.y += self.vel_y
 
     def tick_crash(self) -> None:
         if self.min_y <= self.y <= self.max_y:
@@ -316,6 +393,16 @@ class Player(Entity):
         else:
             self.config.screen.blit(self.image, (self.x, self.y))
     
+    def switch_weapon(self, direction: int) -> None:
+        """切换武器 (1: 下一个, -1: 上一个)"""
+        self.current_weapon_index = (self.current_weapon_index + direction) % len(self.weapons)
+        
+        # 更新子弹伤害值
+        self.bullet_damage = self.weapons[self.current_weapon_index].damage
+        
+        # 播放切换音效
+        self.config.sounds.swoosh.play()
+
     def shoot(self) -> None:
         """玩家发射子弹"""
         weapon = self.weapons[self.current_weapon_index]
@@ -332,9 +419,6 @@ class Player(Entity):
         
         # 添加到子弹列表
         self.bullets.extend(new_bullets)
-        
-        # 播放声音效果
-        self.config.sounds.swoosh.play()
 
     def stop_wings(self) -> None:
         self.img_gen = cycle([0])
@@ -383,68 +467,43 @@ class Player(Entity):
                     return True
         return False
         
-    def check_bullet_hit_boss(self, boss) -> bool:
-        """检查玩家的子弹是否击中Boss"""
+    def check_bullet_hit_boss(self, boss):
+        """检查子弹是否击中Boss"""
         # 存储Boss引用以便追踪导弹使用
         self.boss_target = boss
         
-        for bullet in list(self.bullets):
-            if bullet.collide(boss):
-                self.bullets.remove(bullet)
-                boss.take_damage(bullet.damage if hasattr(bullet, 'damage') else self.bullet_damage)
-                return True
-        return False
-
-    def update_weapons(self):
-        """更新所有武器状态"""
-        for weapon in self.weapons:
-            weapon.update()
-    
-    def update_bullets(self):
-        """更新并绘制所有子弹"""
-        for bullet in list(self.bullets):
-            if hasattr(bullet, 'is_homing') and bullet.is_homing:
-                # 更新追踪弹的目标
-                bullet.target = self.boss_target
+        if not boss or not self.bullets:
+            return False
+        
+        hit = False
+        bullets_to_remove = []
+        
+        for bullet in self.bullets:
+            # 使用对象属性而不是字典访问方式
+            bullet_rect = pygame.Rect(bullet.x, bullet.y, bullet.image.get_width(), bullet.image.get_height())
+            
+            if bullet_rect.colliderect(boss.rect):
+                # 应用伤害 - 直接使用子弹自身的伤害值
+                boss.take_damage(bullet.damage)
                 
-            bullet.tick()
-            # 移除超出屏幕的子弹
-            if bullet.is_out_of_screen():
+                # 添加碰撞特效
+                if hasattr(self, 'explosions'):
+                    explosion = {
+                        'x': bullet.x,
+                        'y': bullet.y,
+                        'frame': 0,
+                        'max_frame': 5,
+                        'size': 20
+                    }
+                    self.explosions.append(explosion)
+                
+                # 标记要移除的子弹
+                bullets_to_remove.append(bullet)
+                hit = True
+        
+        # 从列表中移除命中的子弹
+        for bullet in bullets_to_remove:
+            if bullet in self.bullets:
                 self.bullets.remove(bullet)
-    
-    def draw_weapon_ui(self):
-        """绘制当前武器信息UI"""
-        weapon = self.weapons[self.current_weapon_index]
         
-        # 创建武器信息背景
-        bg_width = 150
-        bg_height = 50
-        bg = pygame.Surface((bg_width, bg_height), pygame.SRCALPHA)
-        bg.fill((0, 0, 0, 180))
-        
-        self.config.screen.blit(bg, self.bullet_ui_pos)
-        
-        # 显示武器名称
-        font = pygame.font.SysFont('microsoftyahei', 14)
-        name_text = font.render(f"武器: {weapon.weapon_type.value}", True, weapon.color)
-        self.config.screen.blit(name_text, (self.bullet_ui_pos[0] + 10, self.bullet_ui_pos[1] + 10))
-        
-        # 显示弹药信息
-        ammo_text = "无限" if weapon.ammo < 0 else f"{weapon.ammo}"
-        ammo_surface = font.render(f"弹药: {ammo_text}", True, (255, 255, 255))
-        self.config.screen.blit(ammo_surface, (self.bullet_ui_pos[0] + 10, self.bullet_ui_pos[1] + 30))
-        
-        # 显示切换提示
-        small_font = pygame.font.SysFont('microsoftyahei', 10)
-        hint_text = small_font.render("按Q/E切换武器", True, (200, 200, 200))
-        self.config.screen.blit(hint_text, (self.bullet_ui_pos[0] + 10, self.bullet_ui_pos[1] + 45))
-    
-    def switch_weapon(self, direction: int) -> None:
-        """切换武器 (1: 下一个, -1: 上一个)"""
-        self.current_weapon_index = (self.current_weapon_index + direction) % len(self.weapons)
-        
-        # 更新子弹伤害值
-        self.bullet_damage = self.weapons[self.current_weapon_index].damage
-        
-        # 播放切换音效
-        self.config.sounds.swoosh.play()
+        return hit

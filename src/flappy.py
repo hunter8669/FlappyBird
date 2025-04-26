@@ -49,6 +49,8 @@ class Flappy:
             images=images,
             sounds=Sounds(),
         )
+        # 设置调试模式
+        self.config.debug = True
         # 记录上一帧的时间，用于计算delta_time
         self.last_frame_time = pygame.time.get_ticks()
         
@@ -268,8 +270,6 @@ class Flappy:
         for powerup in self.powerup_manager.powerups:
             # 如果玩家碰到了道具
             if self.player.collide(powerup):
-                # 应用道具效果
-                self.player.apply_powerup_effect(powerup.power_type)
                 # 激活道具在管理器中的效果
                 self.powerup_manager.activate_effect(powerup.power_type)
                 # 播放得分声音
@@ -283,18 +283,30 @@ class Flappy:
                 self.powerup_manager.powerups.remove(powerup)
 
     def update_player_effects(self):
-        """
-        根据当前激活的效果更新玩家状态
-        """
-        # 检查每种效果是否已过期
-        for power_type in list(PowerUpType):
+        """更新玩家的状态效果"""
+        # 保存之前的速度修改器
+        current_speed_modifier = 1.0
+        current_invincible = False
+        current_size_modifier = 1.0
+        
+        # 检查当前激活的效果
+        for power_type in PowerUpType:
             if self.powerup_manager.has_effect(power_type):
-                # 效果仍然激活，确保效果被应用
-                self.player.apply_powerup_effect(power_type)
-            else:
-                # 效果已过期，移除
-                self.player.remove_powerup_effect(power_type)
-    
+                # 应用效果
+                if power_type == PowerUpType.SPEED_BOOST:
+                    current_speed_modifier = 1.5
+                elif power_type == PowerUpType.INVINCIBLE:
+                    current_invincible = True
+                elif power_type == PowerUpType.SLOW_MOTION:
+                    current_speed_modifier = 0.5
+                elif power_type == PowerUpType.SMALL_SIZE:
+                    current_size_modifier = 0.6
+        
+        # 应用最终效果
+        self.player.speed_modifier = current_speed_modifier
+        self.player.invincible = current_invincible
+        self.player.size_modifier = current_size_modifier
+
     def render_active_effects(self):
         """
         在屏幕上显示当前激活的效果及其剩余时间
@@ -456,19 +468,18 @@ class Flappy:
                     # 增加分数
                     self.score.add()
                     
-                # 检查是否应该进化Boss
-                self.evolve_boss()
-                    
-                # 检查Boss是否被击败
-                if self.boss.is_defeated():
-                    # 增加Boss等级
+                # 检查Boss是否被打败，然后进入下一关卡或结束游戏
+                if self.boss and self.boss.is_defeated():
                     self.boss_level += 1
                     
-                    # 检查是否击败了所有Boss
-                    if self.boss_level >= 4:  # 已经打败了所有4种Boss
-                        # Boss被击败，显示胜利信息
+                    # 调试输出
+                    if hasattr(self.config, 'debug') and self.config.debug:
+                        print(f"Boss defeated! Moving to level {self.boss_level}")
+                    
+                    if self.boss_level > 3:  # 所有Boss都打败了
+                        # 显示游戏胜利画面
                         victory_font = pygame.font.SysFont('microsoftyahei', 48)
-                        victory_text = victory_font.render("完全胜利！", True, (255, 215, 0))
+                        victory_text = victory_font.render("恭喜你打败了所有Boss！", True, (255, 215, 0))
                         victory_rect = victory_text.get_rect(center=(self.config.window.width//2, self.config.window.height//2))
                         
                         # 绘制胜利信息
@@ -493,6 +504,8 @@ class Flappy:
                     else:
                         # 创建下一个Boss
                         await self.next_boss()
+                        # 继续游戏而不是退出游戏循环
+                        continue
                 
                 # 检查玩家是否被Boss子弹击中
                 if self.player.check_boss_bullet_collision(self.boss):
@@ -594,6 +607,11 @@ class Flappy:
             self.boss = Boss(self.config, BossType.SPLITTER)
         elif self.boss_level == 3:
             self.boss = Boss(self.config, BossType.TANK)
+        else:
+            # Boss等级超出范围，显示胜利
+            if self.config.debug:
+                print(f"Invalid boss level: {self.boss_level}, all bosses beaten")
+            return
     
     def evolve_boss(self):
         """根据得分演化Boss的难度"""
@@ -617,6 +635,10 @@ class Flappy:
     
     async def next_boss(self):
         """显示Boss转场动画并创建下一个Boss"""
+        # 清理旧Boss的子弹等资源
+        if self.boss:
+            self.boss.bullets.clear()
+        
         # 创建动画字体
         font = pygame.font.SysFont('microsoftyahei', 36)
         
@@ -651,7 +673,10 @@ class Flappy:
         # 创建新Boss
         self.create_boss()
         
-        # 更新玩家 - 恢复一些武器弹药
+        # 重置玩家状态
+        self.player.bullets.clear()  # 清除玩家所有未命中的子弹
+        
+        # 更新玩家 - 恢复一些武器弹药并给予额外奖励
         for weapon in self.player.weapons:
             if weapon.weapon_type == WeaponType.TRIPLE and weapon.ammo < 15:
                 weapon.ammo = 15

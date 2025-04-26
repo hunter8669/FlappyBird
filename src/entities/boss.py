@@ -415,7 +415,11 @@ class Boss(Entity):
     
     def is_defeated(self) -> bool:
         """检查Boss是否被击败"""
-        return self.health <= 0
+        # 打印当前生命值，帮助调试
+        if self.health <= 0:
+            print(f"Boss已被击败! 类型: {self.boss_type.value}")
+            return True
+        return False
     
     def draw_health_bar(self) -> None:
         """绘制Boss生命条"""
