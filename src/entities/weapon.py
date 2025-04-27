@@ -9,10 +9,10 @@ from .boss import Boss
 
 class WeaponType(Enum):
     """武器类型枚举"""
-    NORMAL = "普通子弹"    # 基础单发子弹
+    NORMAL = "基础子弹"    # 基础单发子弹
     TRIPLE = "三连发"      # 三连发子弹
     LASER = "激光"        # 持续性激光
-    HOMING = "追踪弹"      # 追踪敌人的子弹
+    HOMING = "追踪导弹"      # 追踪敌人的子弹
 
 class Weapon:
     def __init__(self, config: GameConfig, weapon_type: WeaponType = WeaponType.NORMAL):

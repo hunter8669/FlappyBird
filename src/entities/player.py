@@ -1,10 +1,12 @@
 from enum import Enum
 from itertools import cycle
 from typing import List
+import math
+import random
 
 import pygame
 
-from ..utils import GameConfig, clamp
+from ..utils import GameConfig, clamp, get_font
 from .entity import Entity
 from .floor import Floor
 from .pipe import Pipe, Pipes
@@ -64,8 +66,8 @@ class Player(Entity):
         # 爆炸特效
         self.explosions = []
         
-        # 添加弹药显示
-        self.bullet_ui_pos = (10, config.window.height - 40)
+        # 添加弹药显示 - 位置调整到右下角，但与边缘保持适当距离
+        self.bullet_ui_pos = (config.window.width - 120, config.window.height - 60)
 
         # 设置值
         self.min_y = -self.h - 10  # 最小y坐标
@@ -275,60 +277,95 @@ class Player(Entity):
         """绘制当前武器信息UI"""
         weapon = self.weapons[self.current_weapon_index]
         
-        # 创建武器信息背景
-        bg_width = 150
-        bg_height = 50
+        # 创建武器信息背景 - 更好的设计
+        bg_width = 115
+        bg_height = 45
         bg = pygame.Surface((bg_width, bg_height), pygame.SRCALPHA)
         bg.fill((0, 0, 0, 180))
         
+        # 添加圆角边框效果 - 减小边框宽度
+        pygame.draw.rect(bg, (255, 255, 255, 70), pygame.Rect(0, 0, bg_width, bg_height), 1, border_radius=3)
+        
         self.config.screen.blit(bg, self.bullet_ui_pos)
         
-        # 显示武器名称
-        font = pygame.font.SysFont('microsoftyahei', 14)
-        name_text = font.render(f"武器: {weapon.weapon_type.value}", True, weapon.color)
-        self.config.screen.blit(name_text, (self.bullet_ui_pos[0] + 10, self.bullet_ui_pos[1] + 10))
+        # 使用中文字体 - 减小字体
+        font = get_font('SimHei', 12)
+        small_font = get_font('SimHei', 9)
         
-        # 显示弹药信息
-        ammo_text = "无限" if weapon.ammo < 0 else f"{weapon.ammo}"
-        ammo_surface = font.render(f"弹药: {ammo_text}", True, (255, 255, 255))
-        self.config.screen.blit(ammo_surface, (self.bullet_ui_pos[0] + 10, self.bullet_ui_pos[1] + 30))
+        # 绘制武器图标 - 略微调整位置
+        icon_size = 18
+        icon_x = self.bullet_ui_pos[0] + 10
+        icon_y = self.bullet_ui_pos[1] + 10
         
-        # 显示切换提示
-        small_font = pygame.font.SysFont('microsoftyahei', 10)
-        hint_text = small_font.render("按Q/E切换武器", True, (200, 200, 200))
-        self.config.screen.blit(hint_text, (self.bullet_ui_pos[0] + 10, self.bullet_ui_pos[1] + 45))
+        # 圆形图标背景
+        icon_bg = pygame.Surface((icon_size, icon_size), pygame.SRCALPHA)
+        pygame.draw.circle(icon_bg, weapon.color, (icon_size//2, icon_size//2), icon_size//2)
+        
+        # 根据武器类型绘制不同图标
+        if weapon.weapon_type == WeaponType.NORMAL:
+            # 普通子弹图标 - 圆形
+            pygame.draw.circle(icon_bg, (255, 255, 255), (icon_size//2, icon_size//2), icon_size//4)
+        elif weapon.weapon_type == WeaponType.TRIPLE:
+            # 三连发图标 - 三个点
+            for i in range(3):
+                x = icon_size//2
+                y = 4 + i * 5
+                pygame.draw.circle(icon_bg, (255, 255, 255), (x, y), 1)
+        elif weapon.weapon_type == WeaponType.LASER:
+            # 激光图标 - 线
+            pygame.draw.line(icon_bg, (255, 255, 255), (4, icon_size//2), (icon_size-4, icon_size//2), 2)
+        elif weapon.weapon_type == WeaponType.HOMING:
+            # 追踪图标 - 箭头
+            pygame.draw.polygon(icon_bg, (255, 255, 255), 
+                              [(4, 4), (icon_size-4, icon_size//2), (4, icon_size-4)])
+        
+        self.config.screen.blit(icon_bg, (icon_x, icon_y))
+        
+        # 简化武器名称 - 移除"子弹"等
+        name_map = {
+            "基础子弹": "基础",
+            "三连发": "三连",
+            "激光": "激光",
+            "追踪导弹": "追踪"
+        }
+        short_name = name_map.get(weapon.weapon_type.value, weapon.weapon_type.value)
+        
+        # 显示武器名称 - 在图标旁边
+        name_text = font.render(short_name, True, weapon.color)
+        self.config.screen.blit(name_text, (icon_x + icon_size + 5, icon_y))
+        
+        # 弹药符号
+        ammo_text = "∞" if weapon.ammo < 0 else f"{weapon.ammo}"
+        ammo_surface = font.render(f"{ammo_text}", True, (255, 255, 255))
+        self.config.screen.blit(ammo_surface, (icon_x + icon_size + 5, icon_y + 20))
+        
+        # 快捷键提示 - 在底部，更短
+        keys_text = small_font.render("Q/E切换", True, (180, 180, 180))
+        self.config.screen.blit(keys_text, (self.bullet_ui_pos[0] + bg_width//2 - keys_text.get_width()//2, 
+                                            self.bullet_ui_pos[1] + bg_height - 12))
 
     def update_explosions(self):
-        """更新并绘制爆炸特效"""
+        """更新爆炸特效"""
         explosions_to_remove = []
         
         for explosion in self.explosions:
-            # 更新帧
-            explosion['frame'] += 0.2
+            # 更新位置
+            explosion['x'] += explosion['vel_x']
+            explosion['y'] += explosion['vel_y']
             
-            # 如果动画结束，标记为删除
-            if explosion['frame'] >= explosion['max_frame']:
+            # 减少持续时间
+            explosion['duration'] -= 1
+            
+            # 绘制粒子
+            if explosion['duration'] > 0:
+                pygame.draw.circle(
+                    self.config.screen,
+                    explosion['color'],
+                    (int(explosion['x']), int(explosion['y'])),
+                    int(explosion['size'] * (explosion['duration'] / 20))
+                )
+            else:
                 explosions_to_remove.append(explosion)
-                continue
-                
-            # 绘制爆炸
-            size = explosion['size']
-            alpha = 255 * (1 - explosion['frame'] / explosion['max_frame'])
-            
-            # 创建爆炸表面
-            explosion_surf = pygame.Surface((size*2, size*2), pygame.SRCALPHA)
-            pygame.draw.circle(
-                explosion_surf, 
-                (255, 165, 0, alpha), 
-                (size, size), 
-                size * (1 - explosion['frame'] / explosion['max_frame'])
-            )
-            
-            # 绘制爆炸
-            self.config.screen.blit(
-                explosion_surf, 
-                (explosion['x'] - size, explosion['y'] - size)
-            )
         
         # 移除已完成的爆炸
         for explosion in explosions_to_remove:
@@ -388,6 +425,62 @@ class Player(Entity):
             # pygame.transform.rotate rotates clockwise (opposite of what we want)
             img = pygame.transform.rotate(self.image, rotation)
             rotated_rect = img.get_rect(center=(self.x + self.w // 2, self.y + self.h // 2))
+            
+            # 如果处于无敌状态，添加视觉特效
+            if self.invincible:
+                # 创建闪光效果
+                shine_tick = pygame.time.get_ticks() / 100  # 使闪光效果随时间变化
+                shine_alpha = int(128 + 127 * math.sin(shine_tick))  # 在128-255之间变化
+                
+                # 创建一个稍大的金色光环
+                glow_size = max(img.get_width(), img.get_height()) + 12
+                glow_surface = pygame.Surface((glow_size, glow_size), pygame.SRCALPHA)
+                
+                # 绘制金色光环
+                for i in range(3):
+                    glow_radius = glow_size // 2 - i * 2
+                    # 金色的RGB值，透明度随时间变化
+                    gold_color = (255, 215, 0, max(40, shine_alpha - i * 30))
+                    pygame.draw.circle(
+                        glow_surface,
+                        gold_color,
+                        (glow_size // 2, glow_size // 2),
+                        glow_radius
+                    )
+                
+                # 在玩家周围绘制金色保护罩
+                shield_surface = pygame.Surface((glow_size, glow_size), pygame.SRCALPHA)
+                shield_alpha = min(180, shine_alpha)
+                pygame.draw.circle(
+                    shield_surface,
+                    (255, 215, 0, shield_alpha // 3),  # 金色半透明
+                    (glow_size // 2, glow_size // 2),
+                    glow_size // 2 - 2,
+                    3  # 边框宽度
+                )
+                
+                # 闪烁星星效果
+                star_tick = pygame.time.get_ticks() / 200
+                for i in range(4):
+                    star_angle = star_tick + i * (math.pi / 2)
+                    star_dist = glow_size // 3
+                    star_x = glow_size//2 + star_dist * math.cos(star_angle)
+                    star_y = glow_size//2 + star_dist * math.sin(star_angle)
+                    star_size = 2 + math.sin(star_tick * 2 + i) * 1.5
+                    
+                    # 绘制星星
+                    pygame.draw.circle(
+                        shield_surface,
+                        (255, 255, 255, shield_alpha),
+                        (int(star_x), int(star_y)),
+                        star_size
+                    )
+                
+                # 将光环和护盾绘制到屏幕上，确保玩家图像居中
+                glow_rect = glow_surface.get_rect(center=rotated_rect.center)
+                self.config.screen.blit(glow_surface, glow_rect)
+                self.config.screen.blit(shield_surface, glow_rect)
+            
             self.config.screen.blit(img, rotated_rect)
         # For crashed bird on ground or message bird
         else:
@@ -444,6 +537,10 @@ class Player(Entity):
 
     def collided(self, pipes: Pipes, floor: Floor) -> bool:
         """检查是否与管道或地板发生碰撞"""
+        # 如果处于无敌状态，直接返回False（不会碰撞）
+        if hasattr(self, 'invincible') and self.invincible:
+            return False
+            
         if (
             self.y + self.h >= floor.y - 1  # bird on floor
             or self.y < 0  # bird above viewport
@@ -459,51 +556,66 @@ class Player(Entity):
         return False
         
     def check_boss_bullet_collision(self, boss) -> bool:
-        """检查是否与Boss的子弹碰撞"""
-        for bullet in list(boss.bullets):
+        """检查玩家是否被Boss子弹击中"""
+        for bullet in boss.bullets:
             if self.collide(bullet):
-                boss.bullets.remove(bullet)
+                # 只有非无敌状态下才会受到伤害
                 if not self.invincible:
+                    # 创建爆炸效果
+                    self.create_explosion(self.x + self.w//2, self.y + self.h//2, (255, 100, 100))
+                    
+                    # 播放碰撞音效
+                    self.config.sounds.die.play()
+                    
+                    # 从Boss的子弹列表中移除
+                    boss.bullets.remove(bullet)
+                    
                     return True
+                else:
+                    # 无敌状态下子弹被弹开但不造成伤害
+                    boss.bullets.remove(bullet)
+                    
+                    # 播放无敌反弹音效
+                    self.config.sounds.swoosh.play()
+                    
+                    # 创建反弹效果
+                    self.create_explosion(self.x + self.w//2, self.y + self.h//2, (255, 215, 0))
+        
         return False
-        
-    def check_bullet_hit_boss(self, boss):
-        """检查子弹是否击中Boss"""
-        # 存储Boss引用以便追踪导弹使用
-        self.boss_target = boss
-        
-        if not boss or not self.bullets:
-            return False
-        
+    
+    def check_bullet_hit_boss(self, boss) -> bool:
+        """检查玩家的子弹是否击中Boss"""
         hit = False
-        bullets_to_remove = []
-        
-        for bullet in self.bullets:
-            # 使用对象属性而不是字典访问方式
-            bullet_rect = pygame.Rect(bullet.x, bullet.y, bullet.image.get_width(), bullet.image.get_height())
-            
-            if bullet_rect.colliderect(boss.rect):
-                # 应用伤害 - 直接使用子弹自身的伤害值
+        for bullet in list(self.bullets):
+            # 判断玩家子弹与Boss的碰撞
+            if bullet.collide(boss):
+                # 应用伤害
                 boss.take_damage(bullet.damage)
-                
-                # 添加碰撞特效
-                if hasattr(self, 'explosions'):
-                    explosion = {
-                        'x': bullet.x,
-                        'y': bullet.y,
-                        'frame': 0,
-                        'max_frame': 5,
-                        'size': 20
-                    }
-                    self.explosions.append(explosion)
-                
-                # 标记要移除的子弹
-                bullets_to_remove.append(bullet)
+                # 移除子弹
+                self.bullets.remove(bullet)
                 hit = True
         
-        # 从列表中移除命中的子弹
-        for bullet in bullets_to_remove:
-            if bullet in self.bullets:
-                self.bullets.remove(bullet)
-        
         return hit
+
+    def create_explosion(self, x, y, color):
+        """创建爆炸特效"""
+        # 爆炸特效参数
+        particles = 12
+        size = 3
+        speed = 2
+        duration = 20
+        
+        for i in range(particles):
+            angle = random.random() * math.pi * 2
+            vel_x = math.cos(angle) * speed * random.random()
+            vel_y = math.sin(angle) * speed * random.random()
+            
+            self.explosions.append({
+                'x': x,
+                'y': y,
+                'vel_x': vel_x,
+                'vel_y': vel_y,
+                'size': size,
+                'color': color,
+                'duration': duration
+            })

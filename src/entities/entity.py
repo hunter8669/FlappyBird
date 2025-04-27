@@ -93,16 +93,17 @@ class Entity:  # 定义实体基类，所有游戏实体的父类
         更新实体状态。
         """
         self.draw()  # 绘制实体
-        rect = self.rect  # 获取矩形区域
-        if self.config.debug:  # 如果调试模式开启
-            pygame.draw.rect(self.config.screen, (255, 0, 0), rect, 1)  # 绘制红色矩形框
-            # 在矩形顶部写入 x 和 y 坐标
-            font = pygame.font.SysFont("Arial", 13, True)  # 创建字体对象
-            text = font.render(f"{self.x:.1f}, {self.y:.1f}, {self.w:.1f}, {self.h:.1f}", True, (255, 255, 255))  # 渲染文本
-            self.config.screen.blit(text, (
-                rect.x + rect.w / 2 - text.get_width() / 2,
-                rect.y - text.get_height(),
-            ))  # 在屏幕上绘制文本
+        # 禁用调试显示
+        # rect = self.rect  # 获取矩形区域
+        # if self.config.debug:  # 如果调试模式开启
+        #     pygame.draw.rect(self.config.screen, (255, 0, 0), rect, 1)  # 绘制红色矩形框
+        #     # 在矩形顶部写入 x 和 y 坐标
+        #     font = pygame.font.SysFont("Arial", 13, True)  # 创建字体对象
+        #     text = font.render(f"{self.x:.1f}, {self.y:.1f}, {self.w:.1f}, {self.h:.1f}", True, (255, 255, 255))  # 渲染文本
+        #     self.config.screen.blit(text, (
+        #         rect.x + rect.w / 2 - text.get_width() / 2,
+        #         rect.y - text.get_height(),
+        #     ))  # 在屏幕上绘制文本
 
     def draw(self) -> None:  # 绘制实体
         """

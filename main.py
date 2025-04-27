@@ -2,6 +2,9 @@ import asyncio
 import os
 import sys
 
+# 确保使用UTF-8编码
+os.environ['PYTHONIOENCODING'] = 'utf-8'
+
 # Change the working directory to the directory containing this script
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
