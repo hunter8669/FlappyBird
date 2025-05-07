@@ -8,6 +8,7 @@ from .score import Score
 from .welcome_message import WelcomeMessage
 from .boss import Boss
 from .bullet import Bullet
+from .coin import Coin, CoinManager, CoinType
 
 __all__ = [
     "Background",  # 游戏背景
@@ -22,4 +23,7 @@ __all__ = [
     "Boss",  # Boss
     "Bullet",  # 子弹
     "PlayerMode",  # 玩家模式
+    "Coin",
+    "CoinManager",
+    "CoinType",
 ]

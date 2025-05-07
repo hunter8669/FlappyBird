@@ -19,6 +19,7 @@ from .entities.powerup import PowerUpManager, PowerUpType, PowerUp
 from .entities.boss import Boss, BossType
 from .entities.bullet import Bullet
 from .entities.weapon import WeaponType
+from .entities.coin import CoinManager
 from .utils import GameConfig, Images, Sounds, Window, get_font
 from enum import Enum
 
@@ -29,6 +30,7 @@ class GameMode(Enum):
     TIMED = "限时挑战"      # 限时挑战模式
     REVERSE = "重力反转"    # 重力反转模式
     BOSS = "Boss战斗"     # BOSS战模式
+    COIN = "金币收集"     # 金币收集模式
 
 
 class Flappy:
@@ -67,6 +69,12 @@ class Flappy:
         
         # 初始化道具管理器
         self.powerup_manager = PowerUpManager(self.config)
+        
+        # 初始化金币管理器
+        self.coin_manager = CoinManager(self.config)
+        
+        # 初始化金币收集计数
+        self.collected_coins = 0
 
     async def start(self):
         """
@@ -102,12 +110,14 @@ class Flappy:
         timed_text = mode_font.render("限时挑战", True, (255, 255, 255))
         reverse_text = mode_font.render("重力反转", True, (255, 255, 255))
         boss_text = mode_font.render("Boss战斗", True, (255, 255, 255))
+        coin_text = mode_font.render("金币收集", True, (255, 255, 255))
         
         # 添加模式描述文本
         classic_desc = desc_font.render("无尽挑战的经典玩法", True, (220, 220, 220))
         timed_desc = desc_font.render("60秒内获得最高分", True, (220, 220, 220))
         reverse_desc = desc_font.render("颠倒重力，挑战不同体验", True, (220, 220, 220))
         boss_desc = desc_font.render("击败强大的Boss敌人", True, (220, 220, 220))
+        coin_desc = desc_font.render("收集金币获取更高分数", True, (220, 220, 220))
         
         instruction_text = instruction_font.render("↑↓ 选择    空格 开始", True, (255, 255, 255))
         
@@ -129,7 +139,7 @@ class Flappy:
         
         # 创建一个半透明的菜单背景面板
         menu_panel_width = button_width + 60
-        menu_panel_height = 330
+        menu_panel_height = 395  # 增加高度以容纳新的金币模式按钮
         menu_panel = pygame.Surface((menu_panel_width, menu_panel_height), pygame.SRCALPHA)
         menu_panel.fill((0, 0, 0, 150))  # 半透明黑色
         menu_panel_pos = (window_center_x - menu_panel_width//2, button_start_y - 20)
@@ -142,7 +152,8 @@ class Flappy:
             button_start_y,
             button_start_y + button_spacing,
             button_start_y + button_spacing * 2,
-            button_start_y + button_spacing * 3
+            button_start_y + button_spacing * 3,
+            button_start_y + button_spacing * 4  # 新增金币模式按钮位置
         ]
         
         # 为按钮创建矩形和描述文本位置
@@ -150,7 +161,8 @@ class Flappy:
             pygame.Rect(button_x, button_positions[0], button_width, button_height),
             pygame.Rect(button_x, button_positions[1], button_width, button_height),
             pygame.Rect(button_x, button_positions[2], button_width, button_height),
-            pygame.Rect(button_x, button_positions[3], button_width, button_height)
+            pygame.Rect(button_x, button_positions[3], button_width, button_height),
+            pygame.Rect(button_x, button_positions[4], button_width, button_height)  # 新增金币模式按钮矩形
         ]
         
         # 描述文本位置
@@ -158,7 +170,8 @@ class Flappy:
             (window_center_x, button_positions[0] + button_height + 10),
             (window_center_x, button_positions[1] + button_height + 10),
             (window_center_x, button_positions[2] + button_height + 10),
-            (window_center_x, button_positions[3] + button_height + 10)
+            (window_center_x, button_positions[3] + button_height + 10),
+            (window_center_x, button_positions[4] + button_height + 10)  # 新增金币模式描述位置
         ]
         
         # 创建按钮图标 - 使用简单的图形
@@ -192,17 +205,31 @@ class Flappy:
         pygame.draw.rect(boss_icon, (200, 50, 50), (8, 15, 8, 3))
         icons.append(boss_icon)
         
+        # 金币模式图标 - 金币
+        coin_icon = pygame.Surface((24, 24), pygame.SRCALPHA)
+        pygame.draw.circle(coin_icon, (255, 215, 0), (12, 12), 10)  # 金色圆形
+        pygame.draw.circle(coin_icon, (255, 235, 100), (12, 12), 7)  # 浅金色内圈
+        # 添加 "$" 符号
+        try:
+            coin_font = pygame.font.SysFont("Arial", 12, bold=True)
+        except:
+            coin_font = pygame.font.Font(None, 12)
+        coin_text = coin_font.render("$", True, (100, 80, 0))
+        coin_text_rect = coin_text.get_rect(center=(12, 12))
+        coin_icon.blit(coin_text, coin_text_rect)
+        icons.append(coin_icon)
+        
         # 按钮文本
-        button_texts = [classic_text, timed_text, reverse_text, boss_text]
-        desc_texts = [classic_desc, timed_desc, reverse_desc, boss_desc]
+        button_texts = [classic_text, timed_text, reverse_text, boss_text, coin_text]
+        desc_texts = [classic_desc, timed_desc, reverse_desc, boss_desc, coin_desc]
         
         # 初始动画数据
-        button_animations = [0, 0, 0, 0]  # 按钮动画计数器
-        button_scale = [1.0, 1.0, 1.0, 1.0]  # 按钮缩放因子
+        button_animations = [0, 0, 0, 0, 0]  # 按钮动画计数器
+        button_scale = [1.0, 1.0, 1.0, 1.0, 1.0]  # 按钮缩放因子
         
         # 默认选择经典模式
         self.game_mode = GameMode.CLASSIC
-        selected_index = 0  # 0=经典, 1=限时, 2=反转, 3=Boss
+        selected_index = 0  # 0=经典, 1=限时, 2=反转, 3=Boss, 4=金币
         
         # 为游戏标题添加脉动效果
         title_scale = 1.0
@@ -220,7 +247,7 @@ class Flappy:
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_DOWN:
                         # 向下切换模式
-                        selected_index = (selected_index + 1) % 4
+                        selected_index = (selected_index + 1) % 5
                         if selected_index == 0:
                             self.game_mode = GameMode.CLASSIC
                         elif selected_index == 1:
@@ -230,10 +257,12 @@ class Flappy:
                             self.game_mode = GameMode.REVERSE
                         elif selected_index == 3:
                             self.game_mode = GameMode.BOSS
+                        elif selected_index == 4:
+                            self.game_mode = GameMode.COIN
                         self.config.sounds.swoosh.play()
                     elif event.key == pygame.K_UP:
                         # 向上切换模式
-                        selected_index = (selected_index - 1) % 4
+                        selected_index = (selected_index - 1) % 5
                         if selected_index == 0:
                             self.game_mode = GameMode.CLASSIC
                         elif selected_index == 1:
@@ -243,6 +272,8 @@ class Flappy:
                             self.game_mode = GameMode.REVERSE
                         elif selected_index == 3:
                             self.game_mode = GameMode.BOSS
+                        elif selected_index == 4:
+                            self.game_mode = GameMode.COIN
                         self.config.sounds.swoosh.play()
                 
                 # 空格或上箭头开始游戏
@@ -259,7 +290,7 @@ class Flappy:
                 title_scale_dir = -title_scale_dir
             
             # 更新按钮动画
-            for i in range(4):
+            for i in range(5):
                 if i == selected_index:
                     # 选中的按钮放大动画
                     button_animations[i] += 0.1
@@ -292,7 +323,7 @@ class Flappy:
             self.config.screen.blit(scaled_title, title_rect)
             
             # 绘制每个按钮
-            for i in range(4):
+            for i in range(5):
                 # 计算动画效果
                 animation = button_animations[i]
                 current_scale = button_scale[i]
@@ -578,6 +609,18 @@ class Flappy:
             
             self.pipes.upper.clear()  # 清空管道
             self.pipes.lower.clear()  # 清空管道
+        elif self.game_mode == GameMode.COIN:
+            self.player.set_mode(PlayerMode.NORMAL)  # 金币模式使用正常玩家模式
+            
+            # 重置收集的金币数量
+            self.collected_coins = 0
+            
+            # 清空金币管理器
+            self.coin_manager.clear()
+            
+            # 设置金币模式特有的金币生成频率
+            self.coin_manager.spawn_rate = 100  # 每100帧生成一枚金币
+            self.coin_manager.max_coins = 15    # 最多15枚金币同时存在
         else:
             self.player.set_mode(PlayerMode.NORMAL)  # 设置玩家模式为NORMAL（正常模式）
             
@@ -666,15 +709,35 @@ class Flappy:
             # 更新玩家状态效果
             self.update_player_effects()
             
-            # 检查管道通过情况并更新分数
-            if self.game_mode != GameMode.BOSS:
+            # 检查管道通过情况并更新分数（除了Boss模式和金币模式）
+            if self.game_mode not in [GameMode.BOSS, GameMode.COIN]:
                 self.check_pipe_pass()
 
             self.background.tick()  # 更新背景
             self.floor.tick()  # 更新地面
             
+            # 金币模式特有的逻辑
+            if self.game_mode == GameMode.COIN:
+                # 更新金币管理器
+                self.coin_manager.tick(delta_time)
+                
+                # 检查金币碰撞并增加分数
+                collected_score = self.coin_manager.check_player_collision(self.player)
+                if collected_score > 0:
+                    # 增加分数
+                    for _ in range(collected_score):
+                        self.score.add()
+                    
+                    # 增加收集的金币数量
+                    self.collected_coins += collected_score
+                
+                # 仍然保留管道，但是间隔更大，速度更快，使游戏更具挑战性
+                self.pipes.tick()
+                
+                # 显示金币计数器
+                self.render_coin_counter()
             # Boss模式下不渲染管道
-            if self.game_mode != GameMode.BOSS:
+            elif self.game_mode != GameMode.BOSS:
                 self.pipes.tick()  # 更新管道
                 
             self.score.tick()  # 更新得分
@@ -751,6 +814,23 @@ class Flappy:
                         warning_text_rect = warning_text.get_rect(center=(self.config.window.width//2, 50))
                         self.config.screen.blit(warning_text, warning_text_rect)
             
+            # 金币模式的提示
+            if self.game_mode == GameMode.COIN:
+                # 创建一个半透明的提示背景
+                coin_tip_bg = pygame.Surface((180, 40), pygame.SRCALPHA)
+                coin_tip_bg.fill((0, 0, 0, 150))  # 半透明黑色
+                self.config.screen.blit(coin_tip_bg, (5, 5))
+                
+                # 绘制提示文本
+                try:
+                    coin_tip_font = get_font('SimHei', 16)  # 尝试使用中文字体
+                except:
+                    coin_tip_font = pygame.font.SysFont('Arial', 16)  # 如果失败，使用系统字体
+                
+                coin_tip_text = coin_tip_font.render("收集金币以获得更高分数!", True, (255, 215, 0))
+                coin_tip_rect = coin_tip_text.get_rect(center=(95, 25))
+                self.config.screen.blit(coin_tip_text, coin_tip_rect)
+            
             # 显示测试模式提示
             if test_mode_active:
                 # 测试模式提示放在顶部右侧
@@ -768,13 +848,14 @@ class Flappy:
             await asyncio.sleep(0)  # 等待下一帧
             self.config.tick()  # 更新游戏配置
             
-            # 玩家碰撞检测（Boss模式下不检测管道碰撞）
-            if self.game_mode != GameMode.BOSS:
-                if self.player.collided(self.pipes, self.floor) and not self.player.invincible:
-                    return
-            else:
+            # 玩家碰撞检测
+            if self.game_mode == GameMode.BOSS:
                 # Boss模式下只检测与地板的碰撞
                 if (self.player.y + self.player.h >= self.floor.y - 1 or self.player.y < 0) and not self.player.invincible:
+                    return
+            else:
+                # 其他模式下检测与管道和地板的碰撞
+                if self.player.collided(self.pipes, self.floor) and not self.player.invincible:
                     return
             
             # 限时模式结束
@@ -971,6 +1052,45 @@ class Flappy:
         
         # 可选：播放提示音效
         self.config.sounds.swoosh.play()
+
+    def render_coin_counter(self):
+        """
+        在金币模式下显示金币计数器
+        """
+        # 创建一个半透明的背景
+        counter_bg = pygame.Surface((120, 40), pygame.SRCALPHA)
+        counter_bg.fill((0, 0, 0, 150))  # 半透明黑色
+        
+        # 位置放在屏幕下方
+        bg_pos = (self.config.window.width // 2 - 60, self.floor.y - 50)
+        self.config.screen.blit(counter_bg, bg_pos)
+        
+        # 绘制金币图标
+        coin_icon = pygame.Surface((30, 30), pygame.SRCALPHA)
+        pygame.draw.circle(coin_icon, (255, 215, 0), (15, 15), 15)  # 金色圆形
+        pygame.draw.circle(coin_icon, (255, 235, 100), (15, 15), 10)  # 浅金色内圈
+        
+        # 添加 "$" 符号
+        try:
+            coin_font = pygame.font.SysFont("Arial", 16, bold=True)
+        except:
+            coin_font = pygame.font.Font(None, 16)
+        coin_symbol = coin_font.render("$", True, (100, 80, 0))
+        symbol_rect = coin_symbol.get_rect(center=(15, 15))
+        coin_icon.blit(coin_symbol, symbol_rect)
+        
+        # 绘制金币图标
+        self.config.screen.blit(coin_icon, (bg_pos[0] + 10, bg_pos[1] + 5))
+        
+        # 绘制收集的金币数量
+        try:
+            counter_font = get_font('SimHei', 18)
+        except:
+            counter_font = pygame.font.SysFont('Arial', 18)
+        
+        counter_text = counter_font.render(f"x {self.collected_coins}", True, (255, 215, 0))
+        text_pos = (bg_pos[0] + 45, bg_pos[1] + 20)
+        self.config.screen.blit(counter_text, text_pos)
 
     def render_boss_status(self):
         """绘制Boss状态栏，显示Boss血量和关卡信息 - 已废弃，现在直接显示在Boss头顶"""
