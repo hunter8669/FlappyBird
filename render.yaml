@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: flappybird-game
+    env: python
+    buildCommand: "pip install -r backend/requirements_cloud.txt"
+    startCommand: "cd backend && python simple_server_cloud.py"
+    plan: free 
