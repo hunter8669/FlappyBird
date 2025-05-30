@@ -1,2 +1,11 @@
 language = "python3"
-run = "pipenv install ; pipenv run python flappy.py"
+run = "cd backend && python simple_server_cloud.py"
+
+[packager]
+language = "python3"
+ignoredPackages = ["unit_tests"]
+
+[packager.features]
+enabledForHosting = false
+packageSearch = true
+guessImports = true
