@@ -1,18 +1,27 @@
-# 默认目标，运行主程序
+# FlapPyBird云部署Makefile
+# 默认目标，运行云服务器
 default:
 	@make run
 
-# 运行主程序
+# 运行云服务器（Replit/云平台）
 run:
-	python main.py
+	cd backend && python simple_server_cloud.py
+
+# 运行本地游戏（开发用）
+game:
+	cd game-desktop && python main.py
+
+# 运行本地服务器
+local-server:
+	cd backend && python simple_server.py
 
 # 使用pygbag构建Web版本
 web:
-	pygbag main.py
+	pygbag game-desktop/main.py
 
 # 构建Web版本
 web-build:
-	pygbag --build main.py
+	pygbag --build game-desktop/main.py
 
 # 初始化项目，安装依赖
 init:
