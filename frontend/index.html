@@ -542,9 +542,9 @@
                     try {
                         console.log('开始下载游戏文件...');
                         
-                        // 创建隐藏的下载链接
+                        // 创建隐藏的下载链接 - 使用相对路径适配云端环境
                         const link = document.createElement('a');
-                        link.href = 'http://localhost:8000/api/downloads/desktop';
+                        link.href = '/api/downloads/desktop';
                         link.download = 'FlapPyBird-Desktop-v1.2.0.zip';
                         link.style.display = 'none';
                         
@@ -555,9 +555,9 @@
                         
                         console.log('下载已开始...');
                         
-                        // 记录下载统计
+                        // 记录下载统计 - 使用相对路径
                         try {
-                            await fetch('http://localhost:8000/api/downloads/track', {
+                            await fetch('/api/downloads/track', {
                                 method: 'POST',
                                 headers: {
                                     'Content-Type': 'application/json',
