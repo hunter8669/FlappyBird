@@ -120,8 +120,37 @@ class GameAPIHandler(BaseHTTPRequestHandler):
     def handle_download(self):
         """处理游戏下载请求"""
         try:
-            # 创建游戏压缩包
-            print(f"[下载] 开始创建游戏安装包...")
+            # 优先查找预构建的EXE安装包
+            exe_package_path = '../scripts/FlapPyBird-v1.2.0-Windows-x64.zip'
+            
+            if os.path.exists(exe_package_path):
+                print(f"[下载] 提供预构建的EXE安装包...")
+                
+                # 发送EXE安装包
+                with open(exe_package_path, 'rb') as f:
+                    file_data = f.read()
+                
+                file_size = len(file_data)
+                print(f"[下载] EXE安装包: FlapPyBird-v1.2.0-Windows-x64.zip ({file_size} bytes)")
+                
+                # 设置响应头
+                self.send_response(200)
+                self.send_header('Content-Type', 'application/zip')
+                self.send_header('Content-Disposition', 'attachment; filename="FlapPyBird-v1.2.0-Windows-x64.zip"')
+                self.send_header('Content-Length', str(file_size))
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+                self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+                self.end_headers()
+                
+                # 发送文件内容
+                self.wfile.write(file_data)
+                
+                print(f"[下载] EXE安装包已发送: {file_size} bytes")
+                return
+            
+            # 如果没有EXE包，创建源码包（备用方案）
+            print(f"[下载] 未找到EXE安装包，创建源码安装包...")
             
             # 创建临时ZIP文件
             temp_zip = tempfile.NamedTemporaryFile(delete=False, suffix='.zip')
@@ -137,10 +166,53 @@ class GameAPIHandler(BaseHTTPRequestHandler):
                             arc_path = os.path.relpath(file_path, '..')
                             zip_file.write(file_path, arc_path)
                 
-                # 创建简单的启动脚本
+                # 创建自动构建EXE的脚本
+                build_script = '''@echo off
+echo ==========================================
+echo    FlapPy Bird EXE 自动构建器
+echo ==========================================
+echo.
+echo 此脚本将自动为您构建独立的EXE游戏文件
+echo 首次运行需要下载依赖，请保持网络连接
+echo.
+
+REM 检查Python
+python --version >nul 2>&1
+if %errorlevel% neq 0 (
+    echo 错误：未检测到Python环境
+    echo 请先安装Python 3.9+: https://www.python.org/downloads/
+    pause
+    exit /b 1
+)
+
+echo 安装构建依赖...
+pip install pyinstaller pygame
+
+echo 开始构建EXE文件...
+cd scripts
+python build_exe.py
+
+if %errorlevel% eq 0 (
+    echo.
+    echo ✅ 构建完成！
+    echo 生成的EXE文件位于: scripts\\FlapPyBird-v1.2.0\\
+    echo.
+) else (
+    echo.
+    echo ❌ 构建失败，使用源码方式运行：
+    echo cd game-desktop && python main.py
+    echo.
+)
+
+pause
+'''
+                
+                zip_file.writestr('构建EXE.bat', build_script.encode('gbk'))
+                
+                # 创建简单的启动脚本（源码版）
                 startup_script = '''@echo off
 echo ==========================================
-echo    FlapPy Bird 游戏启动器
+echo    FlapPy Bird 游戏启动器 (源码版)
 echo ==========================================
 echo 正在启动游戏...
 echo.
@@ -153,7 +225,7 @@ if %errorlevel% neq 0 (
     echo 请先安装Python 3.9或更高版本：
     echo https://www.python.org/downloads/
     echo.
-    echo 安装完成后重新运行此文件
+    echo 或者运行"构建EXE.bat"生成独立的EXE文件
     pause
     exit /b 1
 )
@@ -186,17 +258,30 @@ if %errorlevel% neq 0 (
 )
 '''
                 
-                zip_file.writestr('启动游戏.bat', startup_script)
+                zip_file.writestr('启动游戏.bat', startup_script.encode('gbk'))
+                
+                # 添加构建脚本
+                build_script_path = '../scripts/build_exe.py'
+                if os.path.exists(build_script_path):
+                    zip_file.write(build_script_path, 'scripts/build_exe.py')
                 
                 # 创建README说明文件
                 readme_content = '''FlapPy Bird 增强版游戏
 ================================
 
-📦 安装说明：
-1. 解压此ZIP文件到任意文件夹
-2. 双击"启动游戏.bat"即可开始游戏
+🎮 快速开始：
 
-🎮 游戏特色：
+方法一：构建EXE文件（推荐）
+1. 双击"构建EXE.bat"
+2. 等待构建完成（首次需要下载依赖）
+3. 运行生成的EXE文件
+
+方法二：源码运行
+1. 双击"启动游戏.bat"
+2. 等待自动安装依赖
+3. 游戏自动启动
+
+🎯 游戏特色：
 - 四种游戏模式（经典、限时、反向、Boss战）
 - 丰富的道具系统
 - Boss战斗和武器系统
@@ -204,15 +289,15 @@ if %errorlevel% neq 0 (
 
 ⚙️ 系统要求：
 - Windows 7/10/11
-- Python 3.9+（首次运行会自动检测和安装）
+- Python 3.9+（如果使用源码运行）
 
-❓ 常见问题：
-1. 如果游戏无法启动，请确保已安装Python
-2. 首次运行可能需要联网下载pygame依赖
-3. 建议将整个文件夹放在非中文路径下
+💡 提示：
+- 推荐使用"构建EXE.bat"生成独立的EXE文件
+- EXE文件可以在没有Python的电脑上运行
+- 首次构建需要联网下载依赖包
 
 🔗 项目地址：https://github.com/yourusername/FlapPyBird
-版本：v1.2.0
+版本：v1.2.0 (源码版 + EXE构建工具)
 更新时间：''' + datetime.now().strftime('%Y-%m-%d') + '''
 
 享受游戏吧！🐦
@@ -225,12 +310,12 @@ if %errorlevel% neq 0 (
                 file_data = f.read()
             
             file_size = len(file_data)
-            print(f"[下载] 游戏安装包已创建: FlapPyBird-Game-v1.2.0.zip ({file_size} bytes)")
+            print(f"[下载] 源码安装包已创建: FlapPyBird-Source-v1.2.0.zip ({file_size} bytes)")
             
             # 设置响应头
             self.send_response(200)
             self.send_header('Content-Type', 'application/zip')
-            self.send_header('Content-Disposition', 'attachment; filename="FlapPyBird-Game-v1.2.0.zip"')
+            self.send_header('Content-Disposition', 'attachment; filename="FlapPyBird-Source-v1.2.0.zip"')
             self.send_header('Content-Length', str(file_size))
             self.send_header('Access-Control-Allow-Origin', '*')
             self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
@@ -243,7 +328,7 @@ if %errorlevel% neq 0 (
             # 清理临时文件
             os.unlink(temp_zip.name)
             
-            print(f"[下载] 游戏安装包已发送: FlapPyBird-Game-v1.2.0.zip ({file_size} bytes)")
+            print(f"[下载] 源码安装包已发送: {file_size} bytes")
             return
             
         except Exception as e:

@@ -1,5 +1,5 @@
 language = "python3"
-run = "cd backend && python simple_server_cloud.py"
+run = "cd backend && pip install -r requirements_cloud.txt && python simple_server_cloud.py"
 
 [packager]
 language = "python3"
@@ -9,3 +9,12 @@ ignoredPackages = ["unit_tests"]
 enabledForHosting = false
 packageSearch = true
 guessImports = true
+
+modules = ["python-3.11"]
+
+[nix]
+channel = "stable-22_11"
+
+[[ports]]
+localPort = 8000
+externalPort = 80

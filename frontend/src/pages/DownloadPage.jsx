@@ -17,9 +17,10 @@ const DownloadPage = () => {
   ];
 
   const downloadStats = {
-    version: '1.2.0',
-    size: '约15MB',
-    updated: '2023-10-15',
+    version: 'v1.2.0',
+    size: '~25-50MB',
+    updated: '2024-01-15',
+    type: 'Windows EXE',
     downloads: '1,234+'
   };
 
@@ -31,7 +32,7 @@ const DownloadPage = () => {
       // 创建隐藏的下载链接
       const link = document.createElement('a');
       link.href = 'http://localhost:8000/api/downloads/desktop';
-      link.download = 'FlapPyBird-Desktop-v1.2.0.zip';
+      link.download = 'FlapPyBird-v1.2.0.zip';
       link.style.display = 'none';
       
       // 添加到页面并触发下载
@@ -50,23 +51,23 @@ const DownloadPage = () => {
           },
           body: JSON.stringify({
             type: 'desktop',
-            version: '1.2.0',
+            version: downloadStats.version,
             timestamp: new Date().toISOString()
           })
         });
         console.log('下载统计已记录');
-      } catch (trackError) {
-        console.error('记录统计失败:', trackError);
+      } catch (statsError) {
+        console.warn('统计记录失败:', statsError);
       }
       
       // 显示下载成功提示
       setTimeout(() => {
-        alert('🎉 下载已开始！\n\n文件名: FlapPyBird-Desktop-v1.2.0.zip\n\n下载完成后：\n1. 解压ZIP文件\n2. 双击"启动桌面游戏.bat"\n3. 或运行 game-desktop/main.py');
-      }, 1000);
+        alert('🎉 下载已开始！\n\n📦 类型：独立游戏安装包\n📋 包含内容：\n  • FlapPyBird.exe（独立版，推荐）\n  • 源码版本（需要Python环境）\n  • EXE构建工具\n\n💡 使用说明：\n1. 解压下载的ZIP文件\n2. 如果有EXE文件，直接双击即可游戏\n3. 如果是源码版，双击"构建EXE.bat"生成EXE\n4. 或双击"启动游戏.bat"直接运行源码版');
+      }, 500);
       
     } catch (error) {
       console.error('下载请求失败:', error);
-      alert(`⚠️ 下载失败\n\n错误信息: ${error.message}\n\n临时解决方案:\n1. 点击"启动本地游戏"\n2. 或手动运行 game-desktop/main.py`);
+      alert(`⚠️ 下载失败\n\n错误信息: ${error.message}\n\n🔧 解决方案:\n1. 检查网络连接\n2. 点击"启动本地游戏"体验在线版\n3. 或稍后重试下载`);
     }
   };
 
@@ -81,157 +82,192 @@ const DownloadPage = () => {
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      <div className="text-center mb-12">
-        <h1 className="pixel-font text-3xl text-white mb-4">📦 下载游戏</h1>
-        <p className="text-gray-100 text-lg">
-          获取完整版FlapPy Bird，享受最佳游戏体验
-        </p>
-      </div>
-
-      {/* 主要下载区域 */}
-      <div className="grid lg:grid-cols-2 gap-8 mb-12">
-        {/* 桌面版下载 */}
-        <div className="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-8">
-          <div className="text-center mb-6">
-            <div className="text-6xl mb-4">🖥️</div>
-            <h2 className="pixel-font text-2xl text-white mb-2">桌面版</h2>
-            <p className="text-gray-100">适用于Windows、macOS、Linux</p>
-          </div>
-
-          <div className="space-y-4 mb-6">
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-200">版本：</span>
-              <span className="text-white">{downloadStats.version}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-200">大小：</span>
-              <span className="text-white">{downloadStats.size}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-200">更新时间：</span>
-              <span className="text-white">{downloadStats.updated}</span>
-            </div>
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-200">下载次数：</span>
-              <span className="text-white">{downloadStats.downloads}</span>
-            </div>
-          </div>
-
-          <button className="w-full bg-green-500 hover:bg-green-600 text-white py-4 px-6 rounded-lg transition-colors flex items-center justify-center" onClick={handleDownload}>
-            <span className="text-xl mr-2">📥</span>
-            <span className="pixel-font">下载桌面版</span>
-          </button>
-
-          <button className="w-full mt-3 bg-blue-500 hover:bg-blue-600 text-white py-3 px-6 rounded-lg transition-colors flex items-center justify-center" onClick={handlePlayLocal}>
-            <span className="text-lg mr-2">🎮</span>
-            <span className="pixel-font">启动本地游戏</span>
-          </button>
-
-          <p className="text-xs text-gray-300 mt-4 text-center">
-            自动检测系统类型并下载对应版本
+    <div className="min-h-screen bg-gradient-to-br from-blue-600 via-purple-600 to-pink-600 py-8">
+      <div className="container mx-auto px-4">
+        {/* 页面标题 */}
+        <div className="text-center mb-8">
+          <h1 className="pixel-font text-3xl text-white mb-4">📦 下载游戏</h1>
+          <p className="text-blue-100 text-lg">
+            下载独立的EXE游戏文件，无需Python环境即可游戏
           </p>
         </div>
 
-        {/* Web版信息 */}
-        <div className="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-8">
-          <div className="text-center mb-6">
-            <div className="text-6xl mb-4">🌐</div>
-            <h2 className="pixel-font text-2xl text-white mb-2">Web版</h2>
-            <p className="text-gray-100">直接在浏览器中游戏</p>
-          </div>
-
-          <div className="space-y-4 mb-6">
+        <div className="max-w-4xl mx-auto grid gap-8">
+          
+          {/* 主要下载区域 */}
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20">
+            {/* 桌面版下载 */}
             <div className="text-center">
-              <div className="text-4xl mb-2">🚧</div>
-              <p className="text-gray-200 text-sm">正在开发中</p>
-            </div>
-            <ul className="text-sm text-gray-100 space-y-2">
-              <li>✅ 无需下载安装</li>
-              <li>✅ 跨平台兼容</li>
-              <li>⏳ pygbag转换中</li>
-              <li>⏳ 移动端优化</li>
-            </ul>
-          </div>
-
-          <button 
-            disabled 
-            className="w-full bg-gray-500 text-gray-300 py-4 px-6 rounded-lg cursor-not-allowed flex items-center justify-center"
-          >
-            <span className="text-xl mr-2">🌐</span>
-            <span className="pixel-font">即将推出</span>
-          </button>
-
-          <p className="text-xs text-gray-300 mt-4 text-center">
-            Web版本正在开发中，敬请期待
-          </p>
-        </div>
-      </div>
-
-      {/* 系统要求 */}
-      <div className="mb-12">
-        <h3 className="pixel-font text-2xl text-white text-center mb-8">💻 系统要求</h3>
-        <div className="grid md:grid-cols-3 gap-6">
-          {systemRequirements.map((req, index) => (
-            <div key={index} className="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-6 text-center">
-              <div className="text-4xl mb-4">{req.icon}</div>
-              <h4 className="pixel-font text-lg text-white mb-2">{req.system}</h4>
-              <p className="text-gray-100 text-sm">{req.version}</p>
-            </div>
-          ))}
-        </div>
-        <div className="text-center mt-6">
-          <p className="text-gray-200 text-sm">
-            💾 需要Python 3.9+环境 | 🎮 需要pygame 2.4.0+
-          </p>
-        </div>
-      </div>
-
-      {/* 游戏特色 */}
-      <div className="mb-12">
-        <h3 className="pixel-font text-2xl text-white text-center mb-8">✨ 完整版特色</h3>
-        <div className="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-8">
-          <div className="grid md:grid-cols-2 gap-6">
-            {features.map((feature, index) => (
-              <div key={index} className="flex items-center space-x-3">
-                <span className="text-green-400 text-xl">✅</span>
-                <span className="text-gray-100">{feature}</span>
+              <div className="text-6xl mb-4">🎮</div>
+              <h2 className="pixel-font text-2xl text-white mb-6">Windows 桌面版</h2>
+              
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6 text-sm">
+                <div className="bg-black/20 rounded-lg p-3">
+                  <div className="text-gray-200">版本</div>
+                  <span className="text-white font-bold">{downloadStats.version}</span>
+                </div>
+                <div className="bg-black/20 rounded-lg p-3">
+                  <div className="text-gray-200">大小</div>
+                  <span className="text-white font-bold">{downloadStats.size}</span>
+                </div>
+                <div className="bg-black/20 rounded-lg p-3">
+                  <div className="text-gray-200">更新</div>
+                  <span className="text-white font-bold">{downloadStats.updated}</span>
+                </div>
+                <div className="bg-black/20 rounded-lg p-3">
+                  <div className="text-gray-200">下载次数</div>
+                  <span className="text-white font-bold">{downloadStats.downloads}</span>
+                </div>
               </div>
-            ))}
-          </div>
-        </div>
-      </div>
 
-      {/* 移动版预告 */}
-      <div className="text-center">
-        <div className="bg-gradient-to-r from-purple-500 to-pink-500 bg-opacity-20 backdrop-blur-sm rounded-lg p-8">
-          <div className="text-6xl mb-4">📱</div>
-          <h3 className="pixel-font text-xl text-white mb-4">📱 移动版本</h3>
-          <p className="text-gray-100 mb-6">
-            iOS和Android版本正在规划中，将支持触控操作和云存档同步
-          </p>
-          <div className="flex justify-center space-x-4">
-            <div className="px-4 py-2 bg-white bg-opacity-20 rounded-lg">
-              <span className="text-sm text-gray-200">🍎 iOS版本</span>
-            </div>
-            <div className="px-4 py-2 bg-white bg-opacity-20 rounded-lg">
-              <span className="text-sm text-gray-200">🤖 Android版本</span>
+              <button 
+                className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white px-8 py-4 rounded-full text-lg font-bold transition-all duration-300 transform hover:scale-105 shadow-lg flex items-center justify-center mx-auto"
+                onClick={handleDownload}
+              >
+                <span className="text-2xl mr-2">⬇️</span>
+                <span className="pixel-font">下载独立版游戏</span>
+              </button>
+
+              <div className="text-center mt-4 space-y-2">
+                <p className="text-green-200 text-sm">
+                  ✅ 包含独立EXE文件，无需安装Python
+                </p>
+                <p className="text-blue-200 text-sm">
+                  🔧 智能检测：优先提供EXE，备选源码+构建工具
+                </p>
+                <p className="text-yellow-200 text-sm">
+                  🌟 支持所有Windows版本（Win7/10/11）
+                </p>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
 
-      {/* 安装说明 */}
-      <div className="mt-12">
-        <div className="bg-blue-500 bg-opacity-20 border border-blue-400 rounded-lg p-6">
-          <h4 className="pixel-font text-lg text-blue-300 mb-4">📋 安装说明</h4>
-          <ol className="text-gray-100 space-y-2 text-sm">
-            <li>1. 下载对应系统的安装包</li>
-            <li>2. 确保系统已安装Python 3.9+</li>
-            <li>3. 运行安装程序或解压游戏文件</li>
-            <li>4. 双击main.py或运行程序启动游戏</li>
-            <li>5. 享受游戏！如有问题请查看README文档</li>
-          </ol>
+          {/* 在线版本推荐 */}
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
+            <div className="text-center">
+              <div className="text-4xl mb-3">🌐</div>
+              <h3 className="pixel-font text-xl text-white mb-4">在线版本（推荐体验）</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 text-sm">
+                <div className="flex items-center justify-center text-green-200">
+                  <span className="mr-2">✅</span>无需下载安装
+                </div>
+                <div className="flex items-center justify-center text-blue-200">
+                  <span className="mr-2">🚀</span>即开即玩
+                </div>
+                <div className="flex items-center justify-center text-purple-200">
+                  <span className="mr-2">📱</span>支持所有设备
+                </div>
+              </div>
+
+              <a 
+                href="/game" 
+                className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-6 py-3 rounded-full font-bold transition-all duration-300 transform hover:scale-105 shadow-lg inline-flex items-center"
+              >
+                <span className="text-xl mr-2">🎮</span>
+                <span className="pixel-font">立即游戏</span>
+              </a>
+            </div>
+          </div>
+
+          {/* 版本对比 */}
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
+            <h3 className="pixel-font text-xl text-white mb-4 text-center">📊 版本对比</h3>
+            
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-white/20">
+                    <th className="text-left text-white p-3">特性</th>
+                    <th className="text-center text-green-300 p-3">🌐 在线版</th>
+                    <th className="text-center text-blue-300 p-3">💻 下载版</th>
+                  </tr>
+                </thead>
+                <tbody className="text-gray-200">
+                  <tr className="border-b border-white/10">
+                    <td className="p-3">安装要求</td>
+                    <td className="text-center p-3">无</td>
+                    <td className="text-center p-3">解压即用</td>
+                  </tr>
+                  <tr className="border-b border-white/10">
+                    <td className="p-3">网络要求</td>
+                    <td className="text-center p-3">需要联网</td>
+                    <td className="text-center p-3">离线可玩</td>
+                  </tr>
+                  <tr className="border-b border-white/10">
+                    <td className="p-3">游戏模式</td>
+                    <td className="text-center p-3">完整四种模式</td>
+                    <td className="text-center p-3">完整四种模式</td>
+                  </tr>
+                  <tr className="border-b border-white/10">
+                    <td className="p-3">性能表现</td>
+                    <td className="text-center p-3">优秀</td>
+                    <td className="text-center p-3">最佳</td>
+                  </tr>
+                  <tr className="border-b border-white/10">
+                    <td className="p-3">更新方式</td>
+                    <td className="text-center p-3">自动</td>
+                    <td className="text-center p-3">手动下载</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* 安装说明 */}
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
+            <h3 className="pixel-font text-xl text-white mb-4 text-center">📋 安装说明</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h4 className="text-green-300 font-bold mb-2">🎯 EXE独立版（推荐）</h4>
+                <ol className="text-gray-200 space-y-1 text-sm">
+                  <li>1. 下载并解压ZIP文件</li>
+                  <li>2. 双击"FlapPyBird.exe"</li>
+                  <li>3. Windows安全提示选择"仍要运行"</li>
+                  <li>4. 开始游戏！</li>
+                </ol>
+              </div>
+              
+              <div>
+                <h4 className="text-blue-300 font-bold mb-2">🔧 源码版（需Python）</h4>
+                <ol className="text-gray-200 space-y-1 text-sm">
+                  <li>1. 下载并解压ZIP文件</li>
+                  <li>2. 双击"构建EXE.bat"生成EXE</li>
+                  <li>3. 或双击"启动游戏.bat"直接运行</li>
+                  <li>4. 首次运行会自动安装依赖</li>
+                </ol>
+              </div>
+            </div>
+          </div>
+
+          {/* 系统要求 */}
+          <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
+            <h3 className="pixel-font text-xl text-white mb-4 text-center">⚙️ 系统要求</h3>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-gray-200">
+              <div>
+                <h4 className="text-green-300 font-bold mb-2">EXE独立版</h4>
+                <ul className="space-y-1 text-sm">
+                  <li>• Windows 7/8/10/11 (64位)</li>
+                  <li>• 至少100MB可用空间</li>
+                  <li>• 分辨率：1024x768或更高</li>
+                  <li>• 无需其他软件</li>
+                </ul>
+              </div>
+              
+              <div>
+                <h4 className="text-blue-300 font-bold mb-2">源码版</h4>
+                <ul className="space-y-1 text-sm">
+                  <li>• Windows 7/8/10/11</li>
+                  <li>• Python 3.9或更高版本</li>
+                  <li>• 网络连接（首次安装依赖）</li>
+                  <li>• 至少200MB可用空间</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
     </div>

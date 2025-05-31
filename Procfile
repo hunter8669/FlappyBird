@@ -1,1 +1,0 @@
-web: cd backend && python simple_server_cloud.py 
