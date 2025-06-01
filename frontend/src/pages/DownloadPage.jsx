@@ -29,8 +29,8 @@ const DownloadPage = () => {
     try {
       console.log('开始下载游戏文件...');
       
-      // 获取下载信息
-      const response = await fetch('/api/download?type=exe');
+      // 获取下载信息 - 修复API路径
+      const response = await fetch('/api/downloads/desktop?type=exe');
       
       if (response.ok) {
         const data = await response.json();
@@ -60,7 +60,9 @@ const DownloadPage = () => {
         }
         
       } else {
-        throw new Error('下载服务暂时不可用');
+        // 响应不成功，尝试直接下载
+        console.log('尝试直接文件下载...');
+        window.location.href = '/api/downloads/desktop?type=exe';
       }
       
     } catch (error) {
@@ -109,7 +111,7 @@ const DownloadPage = () => {
   const handleSourceDownload = async () => {
     try {
       console.log('下载源码版本...');
-      window.location.href = '/api/download?type=source';
+      window.location.href = '/api/downloads/desktop?type=source';
       
       setTimeout(() => {
         alert('📦 源码下载已开始！\n\n包含:\n• 完整Python源码\n• 自动构建EXE脚本\n• 一键启动脚本\n\n首次使用请阅读README.txt');

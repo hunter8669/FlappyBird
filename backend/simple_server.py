@@ -10,6 +10,7 @@ import os
 import zipfile
 import shutil
 import tempfile
+import urllib.parse
 from datetime import datetime
 from http.server import HTTPServer, BaseHTTPRequestHandler
 from urllib.parse import urlparse, parse_qs
@@ -121,20 +122,45 @@ class GameAPIHandler(BaseHTTPRequestHandler):
         """处理游戏下载请求"""
         try:
             # GitHub Releases 下载配置
-            GITHUB_USER = "yourusername"  # 替换为您的GitHub用户名
-            GITHUB_REPO = "FlapPyBird"    # 替换为您的仓库名
+            GITHUB_USER = "hunter8669"  # 您的实际GitHub用户名
+            GITHUB_REPO = "FlappyBird"    # 您的仓库名
             VERSION = "v1.2.0"            # 当前版本
-            
-            # EXE文件下载链接（GitHub Releases）
-            exe_download_url = f"https://github.com/{GITHUB_USER}/{GITHUB_REPO}/releases/download/{VERSION}/FlapPyBird-v1.2.0-Windows-x64.zip"
             
             # 检查用户是否要求源码版本
             query_params = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
             download_type = query_params.get('type', ['exe'])[0]
             
             if download_type == 'exe':
-                # 提供EXE版本的下载重定向
-                print(f"[下载] 重定向到GitHub Releases: {exe_download_url}")
+                # 方案2: 云存储直链 (推荐，用于大文件)
+                # 请将下面的URL替换为您的实际下载链接：
+                # - OneDrive/Google Drive/Dropbox等的公开分享链接
+                # - 或者其他文件托管服务的直链
+                exe_download_url = "https://your-cloud-storage-link.com/FlapPyBird-v1.2.0-Windows-x64.zip"
+                
+                # 方案3: 本地文件下载 (临时测试用)
+                local_file_path = "../scripts/FlapPyBird-v1.2.0-Windows-x64.zip"
+                if os.path.exists(local_file_path):
+                    # 提供本地文件下载
+                    print(f"[下载] 提供本地EXE文件下载")
+                    
+                    with open(local_file_path, 'rb') as f:
+                        file_data = f.read()
+                    
+                    file_size = len(file_data)
+                    
+                    self.send_response(200)
+                    self.send_header('Content-Type', 'application/zip')
+                    self.send_header('Content-Disposition', 'attachment; filename="FlapPyBird-v1.2.0-Windows-x64.zip"')
+                    self.send_header('Content-Length', str(file_size))
+                    self.send_header('Access-Control-Allow-Origin', '*')
+                    self.end_headers()
+                    
+                    self.wfile.write(file_data)
+                    print(f"[下载] 本地EXE文件已发送: {file_size/1024/1024:.1f} MB")
+                    return
+                
+                # 如果本地文件不存在，使用云存储链接
+                print(f"[下载] 重定向到云存储下载链接: {exe_download_url}")
                 
                 # 返回下载信息给前端
                 response = {
