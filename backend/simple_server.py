@@ -194,12 +194,12 @@ python build_exe.py
 
 if %errorlevel% eq 0 (
     echo.
-    echo ✅ 构建完成！
+    echo [成功] 构建完成！
     echo 生成的EXE文件位于: scripts\\FlapPyBird-v1.2.0\\
     echo.
 ) else (
     echo.
-    echo ❌ 构建失败，使用源码方式运行：
+    echo [失败] 构建失败，使用源码方式运行：
     echo cd game-desktop && python main.py
     echo.
 )
@@ -265,11 +265,13 @@ if %errorlevel% neq 0 (
                 if os.path.exists(build_script_path):
                     zip_file.write(build_script_path, 'scripts/build_exe.py')
                 
-                # 创建README说明文件
+                # 创建README说明文件（移除emoji，使用ASCII兼容字符）
                 readme_content = '''FlapPy Bird 增强版游戏
 ================================
 
-🎮 快速开始：
+游戏特色：
+
+快速开始：
 
 方法一：构建EXE文件（推荐）
 1. 双击"构建EXE.bat"
@@ -281,26 +283,26 @@ if %errorlevel% neq 0 (
 2. 等待自动安装依赖
 3. 游戏自动启动
 
-🎯 游戏特色：
+游戏特色：
 - 四种游戏模式（经典、限时、反向、Boss战）
 - 丰富的道具系统
 - Boss战斗和武器系统
 - 流畅的60FPS游戏体验
 
-⚙️ 系统要求：
+系统要求：
 - Windows 7/10/11
 - Python 3.9+（如果使用源码运行）
 
-💡 提示：
+提示：
 - 推荐使用"构建EXE.bat"生成独立的EXE文件
 - EXE文件可以在没有Python的电脑上运行
 - 首次构建需要联网下载依赖包
 
-🔗 项目地址：https://github.com/yourusername/FlapPyBird
+项目地址：https://github.com/yourusername/FlapPyBird
 版本：v1.2.0 (源码版 + EXE构建工具)
 更新时间：''' + datetime.now().strftime('%Y-%m-%d') + '''
 
-享受游戏吧！🐦
+享受游戏吧！
 '''
                 
                 zip_file.writestr('README.txt', readme_content.encode('utf-8'))
