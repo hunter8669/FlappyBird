@@ -29,28 +29,13 @@ const DownloadPage = () => {
     try {
       console.log('开始下载游戏文件...');
       
-      // 尝试直接下载
-      const response = await fetch('/api/downloads/desktop?type=exe');
+      // 直接使用window.location方式下载，这是最可靠的方法
+      window.location.href = '/api/downloads/desktop?type=exe';
       
-      if (response.ok) {
-        // 检查是否是JSON错误响应
-        const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
-          const data = await response.json();
-          if (data.error) {
-            throw new Error(data.message || data.error);
-          }
-        } else {
-          // 不是JSON，说明是文件下载，直接触发下载
-          console.log('直接文件下载成功');
-          // 如果是流响应，浏览器会自动处理下载
-          return;
-        }
-      } else {
-        // 响应不成功，尝试直接下载
-        console.log('尝试直接文件下载...');
-        window.location.href = '/api/downloads/desktop?type=exe';
-      }
+      // 显示成功提示
+      setTimeout(() => {
+        alert('📥 下载已开始！\n\n文件: FlapPyBird-v1.2.0-Windows-x64.zip\n大小: ~252MB\n\n⚠️ 如果下载失败，请检查:\n• 网络连接是否正常\n• 浏览器是否允许下载\n• 磁盘空间是否充足');
+      }, 1000);
       
     } catch (error) {
       console.error('下载失败:', error);
