@@ -29,19 +29,95 @@ const DownloadPage = () => {
     try {
       console.log('开始下载游戏文件...');
       
-      // 方法1：直接跳转下载
-      window.location.href = '/api/downloads/desktop';
+      // 获取下载信息
+      const response = await fetch('/api/download?type=exe');
       
-      // 显示下载提示
-      setTimeout(() => {
-        alert('🎉 下载已开始！\n\n如果没有开始下载，请：\n1. 检查浏览器弹窗设置\n2. 允许从此站点下载\n3. 确保后端服务器正在运行');
-      }, 1000);
+      if (response.ok) {
+        const data = await response.json();
+        
+        if (data.status === 'redirect') {
+          // GitHub Releases下载
+          console.log('重定向到GitHub Releases下载');
+          
+          // 显示下载说明
+          const confirmed = confirm(
+            `🎮 ${data.description}\n\n` +
+            `📦 文件: ${data.filename}\n` +
+            `💾 大小: ${data.size_mb} MB\n\n` +
+            `📋 安装步骤:\n` +
+            data.instructions.join('\n') + '\n\n' +
+            `🔗 点击"确定"跳转到GitHub下载页面`
+          );
+          
+          if (confirmed) {
+            // 重定向到GitHub Releases
+            window.open(data.download_url, '_blank');
+          }
+          
+        } else if (data.status === 'options') {
+          // 显示下载选项
+          showDownloadOptions(data.options);
+        }
+        
+      } else {
+        throw new Error('下载服务暂时不可用');
+      }
       
     } catch (error) {
       console.error('下载失败:', error);
-      // 备用方案：提供手动下载链接
-      const directLink = window.location.origin + '/api/downloads/desktop';
-      alert(`⚠️ 下载失败\n\n🔗 手动下载方法：\n1. 复制下面链接到浏览器：\n${directLink}\n\n2. 或检查后端服务器是否运行：\ncd backend && python simple_server.py`);
+      
+      // 备用方案：直接提供GitHub链接
+      const githubUrl = 'https://github.com/yourusername/FlapPyBird/releases/latest';
+      const confirmed = confirm(
+        `⚠️ 下载服务暂时不可用\n\n` +
+        `🔗 备用下载方法:\n` +
+        `点击"确定"跳转到GitHub Releases页面\n` +
+        `手动下载最新版本的ZIP文件`
+      );
+      
+      if (confirmed) {
+        window.open(githubUrl, '_blank');
+      }
+    }
+  };
+
+  // 显示下载选项
+  const showDownloadOptions = (options) => {
+    const optionText = options.map((opt, index) => 
+      `${index + 1}. ${opt.title}\n   ${opt.description}\n   大小: ${opt.size}`
+    ).join('\n\n');
+    
+    const choice = prompt(
+      `📦 请选择下载类型:\n\n${optionText}\n\n` +
+      `请输入选项编号 (1 或 2):`
+    );
+    
+    const selectedIndex = parseInt(choice) - 1;
+    if (selectedIndex >= 0 && selectedIndex < options.length) {
+      const selected = options[selectedIndex];
+      if (selected.type === 'exe') {
+        // 递归调用EXE下载
+        handleDownload();
+      } else {
+        // 下载源码版本
+        window.location.href = selected.download_url;
+      }
+    }
+  };
+
+  // 直接下载源码版
+  const handleSourceDownload = async () => {
+    try {
+      console.log('下载源码版本...');
+      window.location.href = '/api/download?type=source';
+      
+      setTimeout(() => {
+        alert('📦 源码下载已开始！\n\n包含:\n• 完整Python源码\n• 自动构建EXE脚本\n• 一键启动脚本\n\n首次使用请阅读README.txt');
+      }, 1000);
+      
+    } catch (error) {
+      console.error('源码下载失败:', error);
+      alert('源码下载失败，请稍后重试');
     }
   };
 
@@ -104,23 +180,21 @@ const DownloadPage = () => {
 
               {/* 备用下载按钮 */}
               <div className="mt-4 space-x-4">
-                <a 
-                  href="/api/downloads/desktop" 
+                <button
+                  onClick={handleSourceDownload}
                   className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white px-6 py-3 rounded-full font-bold transition-all duration-300 transform hover:scale-105 shadow-lg inline-flex items-center"
-                  download
                 >
-                  <span className="text-lg mr-2">📎</span>
-                  <span className="pixel-font">直接下载</span>
-                </a>
+                  <span className="text-lg mr-2">📦</span>
+                  <span className="pixel-font">源码版本</span>
+                </button>
                 
-                <a 
-                  href="/api/downloads/desktop" 
-                  target="_blank"
+                <button
+                  onClick={() => window.open('https://github.com/yourusername/FlapPyBird/releases/latest', '_blank')}
                   className="bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white px-6 py-3 rounded-full font-bold transition-all duration-300 transform hover:scale-105 shadow-lg inline-flex items-center"
                 >
                   <span className="text-lg mr-2">🔗</span>
-                  <span className="pixel-font">新窗口下载</span>
-                </a>
+                  <span className="pixel-font">GitHub下载</span>
+                </button>
               </div>
 
               <div className="text-center mt-4 space-y-2">

@@ -15,27 +15,27 @@ from pathlib import Path
 
 def check_dependencies():
     """检查必要的依赖"""
-    print("🔍 检查构建依赖...")
+    print("[检查] 检查构建依赖...")
     
     try:
         import PyInstaller
-        print("✅ PyInstaller 已安装")
+        print("[成功] PyInstaller 已安装")
     except ImportError:
-        print("❌ PyInstaller 未安装，正在安装...")
+        print("[错误] PyInstaller 未安装，正在安装...")
         subprocess.run([sys.executable, "-m", "pip", "install", "pyinstaller"], check=True)
-        print("✅ PyInstaller 安装完成")
+        print("[成功] PyInstaller 安装完成")
     
     try:
         import pygame
-        print("✅ Pygame 已安装")
+        print("[成功] Pygame 已安装")
     except ImportError:
-        print("❌ Pygame 未安装，正在安装...")
+        print("[错误] Pygame 未安装，正在安装...")
         subprocess.run([sys.executable, "-m", "pip", "install", "pygame"], check=True)
-        print("✅ Pygame 安装完成")
+        print("[成功] Pygame 安装完成")
 
 def create_build_spec():
     """创建PyInstaller构建配置文件"""
-    print("📝 创建构建配置...")
+    print("[配置] 创建构建配置...")
     
     spec_content = '''# -*- mode: python ; coding: utf-8 -*-
 
@@ -105,11 +105,11 @@ exe = EXE(
     with open('FlapPyBird.spec', 'w', encoding='utf-8') as f:
         f.write(spec_content)
     
-    print("✅ 构建配置已创建")
+    print("[成功] 构建配置已创建")
 
 def build_exe():
     """构建EXE文件"""
-    print("🔨 开始构建EXE文件...")
+    print("[构建] 开始构建EXE文件...")
     
     # 运行PyInstaller
     cmd = [
@@ -123,23 +123,23 @@ def build_exe():
     result = subprocess.run(cmd, capture_output=True, text=True)
     
     if result.returncode == 0:
-        print("✅ EXE文件构建成功！")
+        print("[成功] EXE文件构建成功！")
         return True
     else:
-        print("❌ EXE文件构建失败:")
+        print("[错误] EXE文件构建失败:")
         print(result.stdout)
         print(result.stderr)
         return False
 
 def create_installer_package():
     """创建完整的安装包"""
-    print("📦 创建安装包...")
+    print("[打包] 创建安装包...")
     
     dist_dir = Path("dist")
     exe_file = dist_dir / "FlapPyBird.exe"
     
     if not exe_file.exists():
-        print("❌ EXE文件不存在，无法创建安装包")
+        print("[错误] EXE文件不存在，无法创建安装包")
         return False
     
     # 创建安装包目录
@@ -167,7 +167,7 @@ timeout /t 2 >nul
 tasklist /fi "imagename eq FlapPyBird.exe" | find "FlapPyBird.exe" >nul
 if %errorlevel% neq 0 (
     echo.
-    echo ⚠️  游戏可能无法正常启动
+    echo [警告] 游戏可能无法正常启动
     echo.
     echo 解决方案：
     echo 1. 右键"FlapPyBird.exe" → 以管理员身份运行
@@ -185,29 +185,29 @@ if %errorlevel% neq 0 (
     readme_content = '''FlapPy Bird 增强版 - 独立版本
 ==================================
 
-🎮 游戏说明：
+[游戏] 游戏说明：
 这是经典FlappyBird的增强版本，包含四种游戏模式：
 - 经典模式：原版体验
 - 限时挑战：90秒挑战
 - 反向模式：重力反转
 - Boss战斗：武器对战
 
-📦 安装说明：
+[安装] 安装说明：
 1. 双击"FlapPyBird.exe"直接开始游戏
 2. 或者双击"启动游戏.bat"运行
 3. 首次运行可能需要Windows安全确认
 
-🎯 游戏控制：
+[控制] 游戏控制：
 - 空格键/上箭头：飞行/射击
 - Q/E键：切换武器（Boss模式）
 - 数字键1-4：选择武器（Boss模式）
 
-⚙️ 系统要求：
+[系统] 系统要求：
 - Windows 7/8/10/11 (64位)
 - 至少100MB磁盘空间
 - 建议分辨率：1024x768或更高
 
-❓ 常见问题：
+[问答] 常见问题：
 1. 如果提示"Windows已保护你的电脑"：
    点击"更多信息" → "仍要运行"
 
@@ -218,12 +218,12 @@ if %errorlevel% neq 0 (
 3. 如果提示缺少DLL文件：
    - 安装Microsoft Visual C++ Redistributable
 
-🔗 项目信息：
+[信息] 项目信息：
 版本：v1.2.0
 更新时间：''' + str(Path.cwd().parent) + '''
 开源地址：https://github.com/yourusername/FlapPyBird
 
-享受游戏吧！🐦✨
+享受游戏吧！
 '''
     
     with open(package_dir / "README.txt", 'w', encoding='utf-8') as f:
@@ -246,16 +246,16 @@ if %errorlevel% neq 0 (
     zip_size = Path(zip_filename).stat().st_size
     exe_size = exe_file.stat().st_size
     
-    print(f"✅ 安装包创建完成:")
-    print(f"   📁 文件夹: {package_dir}")
-    print(f"   📦 压缩包: {zip_filename} ({zip_size/1024/1024:.1f} MB)")
-    print(f"   💾 EXE大小: {exe_size/1024/1024:.1f} MB")
+    print(f"[成功] 安装包创建完成:")
+    print(f"   [文件夹] 文件夹: {package_dir}")
+    print(f"   [压缩包] 压缩包: {zip_filename} ({zip_size/1024/1024:.1f} MB)")
+    print(f"   [大小] EXE大小: {exe_size/1024/1024:.1f} MB")
     
     return True
 
 def main():
     """主构建流程"""
-    print("🚀 FlapPy Bird EXE构建器")
+    print("[启动] FlapPy Bird EXE构建器")
     print("=" * 50)
     
     # 切换到脚本目录
@@ -277,14 +277,14 @@ def main():
         if not create_installer_package():
             return False
         
-        print("\n🎉 构建完成！")
+        print("\n[完成] 构建完成！")
         print("现在您可以将生成的ZIP文件提供给用户下载")
         print("用户只需解压并双击EXE文件即可游戏")
         
         return True
         
     except Exception as e:
-        print(f"❌ 构建过程中出现错误: {e}")
+        print(f"[错误] 构建过程中出现错误: {e}")
         return False
 
 if __name__ == "__main__":
