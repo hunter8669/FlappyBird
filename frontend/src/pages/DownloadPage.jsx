@@ -29,36 +29,19 @@ const DownloadPage = () => {
     try {
       console.log('开始下载游戏文件...');
       
-      // 使用窗口打开方式下载（Replit环境兼容）
-      window.open('/api/downloads/desktop', '_blank');
-      
-      // 记录下载统计
-      try {
-        await fetch('/api/downloads/track', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            type: 'desktop',
-            version: downloadStats.version,
-            timestamp: new Date().toISOString()
-          })
-        });
-        console.log('下载统计已记录');
-      } catch (statsError) {
-        console.warn('统计记录失败:', statsError);
-      }
+      // 方法1：直接跳转下载
+      window.location.href = '/api/downloads/desktop';
       
       // 显示下载提示
       setTimeout(() => {
-        alert('🎉 下载已开始！\n\n📦 文件：FlapPyBird-v1.2.0.zip\n\n💡 如果没有开始下载：\n1. 检查浏览器弹窗设置\n2. 允许从此站点下载\n3. 手动访问：' + window.location.origin + '/api/downloads/desktop');
-      }, 500);
+        alert('🎉 下载已开始！\n\n如果没有开始下载，请：\n1. 检查浏览器弹窗设置\n2. 允许从此站点下载\n3. 确保后端服务器正在运行');
+      }, 1000);
       
     } catch (error) {
       console.error('下载失败:', error);
+      // 备用方案：提供手动下载链接
       const directLink = window.location.origin + '/api/downloads/desktop';
-      alert(`⚠️ 下载失败\n\n🔗 手动下载链接：\n${directLink}\n\n📋 复制上面链接到浏览器地址栏\n或右键选择"另存为"`);
+      alert(`⚠️ 下载失败\n\n🔗 手动下载方法：\n1. 复制下面链接到浏览器：\n${directLink}\n\n2. 或检查后端服务器是否运行：\ncd backend && python simple_server.py`);
     }
   };
 
@@ -118,6 +101,27 @@ const DownloadPage = () => {
                 <span className="text-2xl mr-2">⬇️</span>
                 <span className="pixel-font">下载独立版游戏</span>
               </button>
+
+              {/* 备用下载按钮 */}
+              <div className="mt-4 space-x-4">
+                <a 
+                  href="/api/downloads/desktop" 
+                  className="bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white px-6 py-3 rounded-full font-bold transition-all duration-300 transform hover:scale-105 shadow-lg inline-flex items-center"
+                  download
+                >
+                  <span className="text-lg mr-2">📎</span>
+                  <span className="pixel-font">直接下载</span>
+                </a>
+                
+                <a 
+                  href="/api/downloads/desktop" 
+                  target="_blank"
+                  className="bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white px-6 py-3 rounded-full font-bold transition-all duration-300 transform hover:scale-105 shadow-lg inline-flex items-center"
+                >
+                  <span className="text-lg mr-2">🔗</span>
+                  <span className="pixel-font">新窗口下载</span>
+                </a>
+              </div>
 
               <div className="text-center mt-4 space-y-2">
                 <p className="text-green-200 text-sm">
