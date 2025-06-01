@@ -4,6 +4,9 @@ build/
 *.exe
 *.zip
 
+# Release版本例外（使用Git LFS）
+!**/FlapPyBird-v*-Windows-x64.zip
+
 # Python
 __pycache__/
 *.py[cod]
