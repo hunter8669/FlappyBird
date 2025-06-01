@@ -29,22 +29,12 @@ const DownloadPage = () => {
     try {
       console.log('开始下载游戏文件...');
       
-      // 创建隐藏的下载链接
-      const link = document.createElement('a');
-      link.href = 'http://localhost:8000/api/downloads/desktop';
-      link.download = 'FlapPyBird-v1.2.0.zip';
-      link.style.display = 'none';
-      
-      // 添加到页面并触发下载
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      console.log('下载已开始...');
+      // 使用窗口打开方式下载（Replit环境兼容）
+      window.open('/api/downloads/desktop', '_blank');
       
       // 记录下载统计
       try {
-        await fetch('http://localhost:8000/api/downloads/track', {
+        await fetch('/api/downloads/track', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -60,14 +50,15 @@ const DownloadPage = () => {
         console.warn('统计记录失败:', statsError);
       }
       
-      // 显示下载成功提示
+      // 显示下载提示
       setTimeout(() => {
-        alert('🎉 下载已开始！\n\n📦 类型：独立游戏安装包\n📋 包含内容：\n  • FlapPyBird.exe（独立版，推荐）\n  • 源码版本（需要Python环境）\n  • EXE构建工具\n\n💡 使用说明：\n1. 解压下载的ZIP文件\n2. 如果有EXE文件，直接双击即可游戏\n3. 如果是源码版，双击"构建EXE.bat"生成EXE\n4. 或双击"启动游戏.bat"直接运行源码版');
+        alert('🎉 下载已开始！\n\n📦 文件：FlapPyBird-v1.2.0.zip\n\n💡 如果没有开始下载：\n1. 检查浏览器弹窗设置\n2. 允许从此站点下载\n3. 手动访问：' + window.location.origin + '/api/downloads/desktop');
       }, 500);
       
     } catch (error) {
-      console.error('下载请求失败:', error);
-      alert(`⚠️ 下载失败\n\n错误信息: ${error.message}\n\n🔧 解决方案:\n1. 检查网络连接\n2. 点击"启动本地游戏"体验在线版\n3. 或稍后重试下载`);
+      console.error('下载失败:', error);
+      const directLink = window.location.origin + '/api/downloads/desktop';
+      alert(`⚠️ 下载失败\n\n🔗 手动下载链接：\n${directLink}\n\n📋 复制上面链接到浏览器地址栏\n或右键选择"另存为"`);
     }
   };
 
