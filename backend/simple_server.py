@@ -127,7 +127,7 @@ class GameAPIHandler(BaseHTTPRequestHandler):
             VERSION = "v1.2.0"            # 当前版本
             
             # 检查用户是否要求源码版本
-            query_params = urllib.parse.parse_qs(urllib.parse.urlparse(self.path).query)
+            query_params = parse_qs(urlparse(self.path).query)
             download_type = query_params.get('type', ['exe'])[0]
             
             if download_type == 'exe':
