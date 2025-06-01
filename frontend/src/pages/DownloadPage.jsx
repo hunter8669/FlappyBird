@@ -54,6 +54,11 @@ const DownloadPage = () => {
             window.open(data.download_url, '_blank');
           }
           
+        } else if (data.status === 'guide') {
+          // 显示下载指南
+          console.log('显示下载指南');
+          showDownloadGuide(data);
+          
         } else if (data.status === 'options') {
           // 显示下载选项
           showDownloadOptions(data.options);
@@ -79,6 +84,41 @@ const DownloadPage = () => {
       
       if (confirmed) {
         window.open(githubUrl, '_blank');
+      }
+    }
+  };
+
+  // 显示下载指南
+  const showDownloadGuide = (data) => {
+    let guideText = `${data.title}\n\n${data.description}\n\n`;
+    
+    data.options.forEach((option, index) => {
+      guideText += `${option.title}\n${option.description}\n大小: ${option.size}\n\n`;
+    });
+    
+    guideText += `使用说明:\n${data.instructions.join('\n')}`;
+    
+    const choice = prompt(guideText + '\n\n请输入选择 (1/2/3):');
+    
+    const selectedIndex = parseInt(choice) - 1;
+    if (selectedIndex >= 0 && selectedIndex < data.options.length) {
+      const selected = data.options[selectedIndex];
+      
+      switch (selected.action) {
+        case 'download_source':
+          // 下载源码版
+          handleSourceDownload();
+          break;
+        case 'open_github':
+          // 打开GitHub
+          window.open(selected.url, '_blank');
+          break;
+        case 'play_online':
+          // 跳转到在线游戏
+          window.location.href = selected.url;
+          break;
+        default:
+          console.log('未知操作:', selected.action);
       }
     }
   };

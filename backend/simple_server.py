@@ -131,22 +131,14 @@ class GameAPIHandler(BaseHTTPRequestHandler):
             download_type = query_params.get('type', ['exe'])[0]
             
             if download_type == 'exe':
-                # 方案2: 云存储直链 (推荐，用于大文件)
-                # 请将下面的URL替换为您的实际下载链接：
-                # - OneDrive/Google Drive/Dropbox等的公开分享链接
-                # - 或者其他文件托管服务的直链
-                exe_download_url = "https://your-cloud-storage-link.com/FlapPyBird-v1.2.0-Windows-x64.zip"
-                
                 # 方案3: 本地文件下载 (临时测试用)
                 local_file_path = "../scripts/FlapPyBird-v1.2.0-Windows-x64.zip"
                 if os.path.exists(local_file_path):
                     # 提供本地文件下载
                     print(f"[下载] 提供本地EXE文件下载")
                     
-                    with open(local_file_path, 'rb') as f:
-                        file_data = f.read()
-                    
-                    file_size = len(file_data)
+                    # 获取文件大小
+                    file_size = os.path.getsize(local_file_path)
                     
                     self.send_response(200)
                     self.send_header('Content-Type', 'application/zip')
@@ -155,27 +147,57 @@ class GameAPIHandler(BaseHTTPRequestHandler):
                     self.send_header('Access-Control-Allow-Origin', '*')
                     self.end_headers()
                     
-                    self.wfile.write(file_data)
-                    print(f"[下载] 本地EXE文件已发送: {file_size/1024/1024:.1f} MB")
+                    # 使用流式传输，避免内存不足
+                    chunk_size = 8192  # 8KB chunks
+                    bytes_sent = 0
+                    
+                    with open(local_file_path, 'rb') as f:
+                        while True:
+                            chunk = f.read(chunk_size)
+                            if not chunk:
+                                break
+                            self.wfile.write(chunk)
+                            bytes_sent += len(chunk)
+                    
+                    print(f"[下载] 本地EXE文件已发送: {bytes_sent/1024/1024:.1f} MB")
                     return
                 
-                # 如果本地文件不存在，使用云存储链接
-                print(f"[下载] 重定向到云存储下载链接: {exe_download_url}")
+                # 如果本地文件不存在，提供更有用的指导
+                print(f"[下载] 本地EXE文件不存在，提供下载指导")
                 
-                # 返回下载信息给前端
+                # 返回下载指导信息给前端
                 response = {
-                    "status": "redirect",
-                    "download_url": exe_download_url,
+                    "status": "guide",
                     "type": "exe", 
                     "version": VERSION,
                     "filename": "FlapPyBird-v1.2.0-Windows-x64.zip",
-                    "size_mb": 241,
-                    "description": "可直接运行的EXE应用程序（推荐）",
+                    "size_mb": 252,
+                    "title": "游戏下载指南",
+                    "description": "由于文件较大，请选择以下下载方式之一：",
+                    "options": [
+                        {
+                            "title": "📦 方式一：源码版 + 构建工具",
+                            "description": "下载完整源码，包含一键构建EXE的脚本",
+                            "action": "download_source",
+                            "size": "约10MB"
+                        },
+                        {
+                            "title": "🔗 方式二：GitHub Releases",
+                            "description": "访问GitHub仓库的Releases页面手动下载",
+                            "action": "open_github",
+                            "url": f"https://github.com/{GITHUB_USER}/{GITHUB_REPO}/releases/latest"
+                        },
+                        {
+                            "title": "🎮 方式三：在线版游戏",
+                            "description": "直接在浏览器中游戏，无需下载",
+                            "action": "play_online",
+                            "url": "/game"
+                        }
+                    ],
                     "instructions": [
-                        "1. 点击下载链接下载ZIP文件",
-                        "2. 解压缩到任意文件夹",
-                        "3. 双击FlapPyBird.exe开始游戏",
-                        "4. 首次运行可能需要Windows安全确认"
+                        "推荐方式一：下载源码版，使用构建脚本生成EXE",
+                        "如果需要现成的EXE文件，请使用方式二",
+                        "想要立即体验游戏，请选择方式三"
                     ]
                 }
                 
