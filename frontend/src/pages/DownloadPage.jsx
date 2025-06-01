@@ -29,41 +29,23 @@ const DownloadPage = () => {
     try {
       console.log('开始下载游戏文件...');
       
-      // 获取下载信息 - 修复API路径
+      // 尝试直接下载
       const response = await fetch('/api/downloads/desktop?type=exe');
       
       if (response.ok) {
-        const data = await response.json();
-        
-        if (data.status === 'redirect') {
-          // GitHub Releases下载
-          console.log('重定向到GitHub Releases下载');
-          
-          // 显示下载说明
-          const confirmed = confirm(
-            `🎮 ${data.description}\n\n` +
-            `📦 文件: ${data.filename}\n` +
-            `💾 大小: ${data.size_mb} MB\n\n` +
-            `📋 安装步骤:\n` +
-            data.instructions.join('\n') + '\n\n' +
-            `🔗 点击"确定"跳转到GitHub下载页面`
-          );
-          
-          if (confirmed) {
-            // 重定向到GitHub Releases
-            window.open(data.download_url, '_blank');
+        // 检查是否是JSON错误响应
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          const data = await response.json();
+          if (data.error) {
+            throw new Error(data.message || data.error);
           }
-          
-        } else if (data.status === 'guide') {
-          // 显示下载指南
-          console.log('显示下载指南');
-          showDownloadGuide(data);
-          
-        } else if (data.status === 'options') {
-          // 显示下载选项
-          showDownloadOptions(data.options);
+        } else {
+          // 不是JSON，说明是文件下载，直接触发下载
+          console.log('直接文件下载成功');
+          // 如果是流响应，浏览器会自动处理下载
+          return;
         }
-        
       } else {
         // 响应不成功，尝试直接下载
         console.log('尝试直接文件下载...');
@@ -73,76 +55,20 @@ const DownloadPage = () => {
     } catch (error) {
       console.error('下载失败:', error);
       
-      // 备用方案：直接提供GitHub链接
-      const githubUrl = 'https://github.com/yourusername/FlapPyBird/releases/latest';
+      // 显示错误信息
       const confirmed = confirm(
-        `⚠️ 下载服务暂时不可用\n\n` +
-        `🔗 备用下载方法:\n` +
-        `点击"确定"跳转到GitHub Releases页面\n` +
-        `手动下载最新版本的ZIP文件`
+        `⚠️ 下载失败: ${error.message}\n\n` +
+        `🔗 备用方案:\n` +
+        `1. 点击"确定"下载源码版（包含构建工具）\n` +
+        `2. 点击"取消"访问GitHub手动下载`
       );
       
       if (confirmed) {
-        window.open(githubUrl, '_blank');
-      }
-    }
-  };
-
-  // 显示下载指南
-  const showDownloadGuide = (data) => {
-    let guideText = `${data.title}\n\n${data.description}\n\n`;
-    
-    data.options.forEach((option, index) => {
-      guideText += `${option.title}\n${option.description}\n大小: ${option.size}\n\n`;
-    });
-    
-    guideText += `使用说明:\n${data.instructions.join('\n')}`;
-    
-    const choice = prompt(guideText + '\n\n请输入选择 (1/2/3):');
-    
-    const selectedIndex = parseInt(choice) - 1;
-    if (selectedIndex >= 0 && selectedIndex < data.options.length) {
-      const selected = data.options[selectedIndex];
-      
-      switch (selected.action) {
-        case 'download_source':
-          // 下载源码版
-          handleSourceDownload();
-          break;
-        case 'open_github':
-          // 打开GitHub
-          window.open(selected.url, '_blank');
-          break;
-        case 'play_online':
-          // 跳转到在线游戏
-          window.location.href = selected.url;
-          break;
-        default:
-          console.log('未知操作:', selected.action);
-      }
-    }
-  };
-
-  // 显示下载选项
-  const showDownloadOptions = (options) => {
-    const optionText = options.map((opt, index) => 
-      `${index + 1}. ${opt.title}\n   ${opt.description}\n   大小: ${opt.size}`
-    ).join('\n\n');
-    
-    const choice = prompt(
-      `📦 请选择下载类型:\n\n${optionText}\n\n` +
-      `请输入选项编号 (1 或 2):`
-    );
-    
-    const selectedIndex = parseInt(choice) - 1;
-    if (selectedIndex >= 0 && selectedIndex < options.length) {
-      const selected = options[selectedIndex];
-      if (selected.type === 'exe') {
-        // 递归调用EXE下载
-        handleDownload();
+        // 下载源码版
+        handleSourceDownload();
       } else {
-        // 下载源码版本
-        window.location.href = selected.download_url;
+        // 访问GitHub
+        window.open('https://github.com/hunter8669/FlappyBird/releases/latest', '_blank');
       }
     }
   };

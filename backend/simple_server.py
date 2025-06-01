@@ -131,7 +131,7 @@ class GameAPIHandler(BaseHTTPRequestHandler):
             download_type = query_params.get('type', ['exe'])[0]
             
             if download_type == 'exe':
-                # 方案3: 本地文件下载 (临时测试用)
+                # 本地文件下载
                 local_file_path = "../scripts/FlapPyBird-v1.2.0-Windows-x64.zip"
                 if os.path.exists(local_file_path):
                     # 提供本地文件下载
@@ -151,61 +151,37 @@ class GameAPIHandler(BaseHTTPRequestHandler):
                     chunk_size = 8192  # 8KB chunks
                     bytes_sent = 0
                     
-                    with open(local_file_path, 'rb') as f:
-                        while True:
-                            chunk = f.read(chunk_size)
-                            if not chunk:
-                                break
-                            self.wfile.write(chunk)
-                            bytes_sent += len(chunk)
-                    
-                    print(f"[下载] 本地EXE文件已发送: {bytes_sent/1024/1024:.1f} MB")
-                    return
+                    try:
+                        with open(local_file_path, 'rb') as f:
+                            while True:
+                                chunk = f.read(chunk_size)
+                                if not chunk:
+                                    break
+                                self.wfile.write(chunk)
+                                bytes_sent += len(chunk)
+                        
+                        print(f"[下载] 本地EXE文件已发送: {bytes_sent/1024/1024:.1f} MB")
+                        return
+                    except Exception as e:
+                        print(f"[错误] 文件传输失败: {e}")
+                        self.send_response(500)
+                        self.send_header('Content-Type', 'application/json; charset=utf-8')
+                        self.send_header('Access-Control-Allow-Origin', '*')
+                        error_response = {"error": "文件传输失败", "message": str(e)}
+                        self.wfile.write(json.dumps(error_response, ensure_ascii=False).encode('utf-8'))
+                        return
                 
-                # 如果本地文件不存在，提供更有用的指导
-                print(f"[下载] 本地EXE文件不存在，提供下载指导")
-                
-                # 返回下载指导信息给前端
-                response = {
-                    "status": "guide",
-                    "type": "exe", 
-                    "version": VERSION,
-                    "filename": "FlapPyBird-v1.2.0-Windows-x64.zip",
-                    "size_mb": 252,
-                    "title": "游戏下载指南",
-                    "description": "由于文件较大，请选择以下下载方式之一：",
-                    "options": [
-                        {
-                            "title": "📦 方式一：源码版 + 构建工具",
-                            "description": "下载完整源码，包含一键构建EXE的脚本",
-                            "action": "download_source",
-                            "size": "约10MB"
-                        },
-                        {
-                            "title": "🔗 方式二：GitHub Releases",
-                            "description": "访问GitHub仓库的Releases页面手动下载",
-                            "action": "open_github",
-                            "url": f"https://github.com/{GITHUB_USER}/{GITHUB_REPO}/releases/latest"
-                        },
-                        {
-                            "title": "🎮 方式三：在线版游戏",
-                            "description": "直接在浏览器中游戏，无需下载",
-                            "action": "play_online",
-                            "url": "/game"
-                        }
-                    ],
-                    "instructions": [
-                        "推荐方式一：下载源码版，使用构建脚本生成EXE",
-                        "如果需要现成的EXE文件，请使用方式二",
-                        "想要立即体验游戏，请选择方式三"
-                    ]
-                }
-                
-                self.send_response(200)
+                # 如果本地文件不存在
+                print(f"[下载] 本地EXE文件不存在")
+                self.send_response(404)
                 self.send_header('Content-Type', 'application/json; charset=utf-8')
                 self.send_header('Access-Control-Allow-Origin', '*')
-                self.end_headers()
-                self.wfile.write(json.dumps(response, ensure_ascii=False).encode('utf-8'))
+                error_response = {
+                    "error": "文件不存在", 
+                    "message": "游戏文件尚未准备就绪，请稍后重试或联系管理员",
+                    "filename": "FlapPyBird-v1.2.0-Windows-x64.zip"
+                }
+                self.wfile.write(json.dumps(error_response, ensure_ascii=False).encode('utf-8'))
                 return
             
             elif download_type == 'source':
