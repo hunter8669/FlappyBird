@@ -1,0 +1,1378 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlapPy Bird 完整增强版 - 在线游戏</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #87CEEB 0%, #98D8E8 100%);
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+        
+        .game-container {
+            position: relative;
+            background: #87CEEB;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        canvas {
+            display: block;
+            border-radius: 10px;
+        }
+        
+        .ui-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: white;
+        }
+        
+        .game-title {
+            font-size: 3rem;
+            font-weight: bold;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.7);
+            margin-bottom: 1rem;
+            animation: bounce 2s infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .game-info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+        }
+        
+        .game-instructions {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            font-size: 1rem;
+            background: rgba(0,0,0,0.5);
+            padding: 10px 20px;
+            border-radius: 20px;
+            pointer-events: all;
+        }
+        
+        .start-button, .restart-button {
+            background: #FFA500;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 25px;
+            cursor: pointer;
+            margin: 10px;
+            pointer-events: all;
+            transition: transform 0.2s;
+        }
+        
+        .start-button:hover, .restart-button:hover {
+            transform: scale(1.05);
+            background: #FF8C00;
+        }
+        
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            background: rgba(0,0,0,0.8);
+            padding: 30px;
+            border-radius: 20px;
+            pointer-events: all;
+        }
+        
+        .score-display {
+            font-size: 2rem;
+            margin: 10px 0;
+            color: #FFD700;
+        }
+        
+        .mode-selector {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 10px;
+            pointer-events: all;
+        }
+        
+        .mode-button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            margin: 2px;
+            border-radius: 15px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: background 0.3s;
+        }
+        
+        .mode-button:hover {
+            background: #45a049;
+        }
+        
+        .mode-button.active {
+            background: #FF5722;
+        }
+        
+        .controls {
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #ddd;
+        }
+        
+        /* 新增：道具和武器UI */
+        .power-up-display {
+            position: absolute;
+            top: 120px;
+            left: 20px;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 10px;
+            pointer-events: none;
+            min-width: 150px;
+        }
+        
+        .weapon-display {
+            position: absolute;
+            bottom: 80px;
+            left: 20px;
+            background: rgba(0,0,0,0.7);
+            padding: 10px;
+            border-radius: 10px;
+            pointer-events: all;
+            display: none;
+        }
+        
+        .weapon-button {
+            background: #FF6B35;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            margin: 2px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+        
+        .weapon-button.active {
+            background: #FF3B05;
+        }
+        
+        .shop-button {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: #FFD700;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            pointer-events: all;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <canvas id="gameCanvas" width="800" height="600"></canvas>
+        
+        <div class="ui-overlay">
+            <!-- 游戏标题 -->
+            <div class="game-title" id="gameTitle">🐦 FlapPy Bird 完整版</div>
+            
+            <!-- 游戏信息 -->
+            <div class="game-info">
+                <div>分数: <span id="score">0</span></div>
+                <div>最高分: <span id="highScore">0</span></div>
+                <div>🪙 金币: <span id="coins">0</span></div>
+                <div id="timeDisplay" style="display: none;">时间: <span id="timeLeft">90</span>s</div>
+                <div id="livesDisplay" style="display: none;">❤️ 生命: <span id="lives">1</span></div>
+            </div>
+            
+            <!-- 模式选择器 -->
+            <div class="mode-selector">
+                <div style="color: white; margin-bottom: 5px; font-weight: bold;">游戏模式</div>
+                <button class="mode-button active" data-mode="classic">经典</button>
+                <button class="mode-button" data-mode="timed">限时</button>
+                <button class="mode-button" data-mode="reverse">反向</button>
+                <button class="mode-button" data-mode="boss">Boss</button>
+                <button class="mode-button" data-mode="coin">金币</button>
+            </div>
+            
+            <!-- 道具显示 -->
+            <div class="power-up-display" id="powerUpDisplay">
+                <div style="color: white; font-weight: bold; margin-bottom: 5px;">🎁 激活道具</div>
+                <div id="activePowerUps"></div>
+            </div>
+            
+            <!-- 武器选择 -->
+            <div class="weapon-display" id="weaponDisplay">
+                <div style="color: white; font-weight: bold; margin-bottom: 5px;">🔫 武器选择</div>
+                <button class="weapon-button active" data-weapon="laser">激光</button>
+                <button class="weapon-button" data-weapon="rocket">火箭</button>
+                <button class="weapon-button" data-weapon="plasma">等离子</button>
+                <button class="weapon-button" data-weapon="freeze">冰冻</button>
+            </div>
+            
+            <!-- 开始界面 -->
+            <div id="startScreen" class="game-instructions">
+                <h3>🎮 准备开始游戏？</h3>
+                <p>点击或按空格键控制小鸟飞行</p>
+                <p>收集金币，使用道具，挑战Boss！</p>
+                <button class="start-button" onclick="startGame()">开始游戏</button>
+                <div class="controls">
+                    <p>🖱️ 鼠标点击 | ⌨️ 空格键 | 📱 触摸屏幕</p>
+                    <p>数字键1-4切换武器 | P键暂停</p>
+                </div>
+            </div>
+            
+            <!-- 游戏结束界面 -->
+            <div id="gameOverScreen" class="game-over" style="display: none;">
+                <h2>🎯 游戏结束!</h2>
+                <div class="score-display">本次得分: <span id="finalScore">0</span></div>
+                <div class="score-display">最高纪录: <span id="bestScore">0</span></div>
+                <div class="score-display">🪙 获得金币: <span id="earnedCoins">0</span></div>
+                <button class="restart-button" onclick="restartGame()">重新开始</button>
+                <button class="restart-button" onclick="goHome()">返回首页</button>
+            </div>
+            
+            <!-- 暂停界面 -->
+            <div id="pauseScreen" class="game-over" style="display: none;">
+                <h2>⏸️ 游戏暂停</h2>
+                <p>按空格键继续游戏</p>
+                <button class="restart-button" onclick="resumeGame()">继续游戏</button>
+                <button class="restart-button" onclick="restartGame()">重新开始</button>
+            </div>
+            
+            <!-- 商店按钮 -->
+            <button class="shop-button" onclick="openShop()">🛒 商店</button>
+        </div>
+    </div>
+
+    <script>
+        // ==================== 游戏实体类 ====================
+        
+        class Coin {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.width = 20;
+                this.height = 20;
+                this.collected = false;
+                this.value = 1;
+                this.rotation = 0;
+                this.bobOffset = Math.random() * Math.PI * 2;
+            }
+            
+            update() {
+                this.x -= gameSpeed;
+                this.rotation += 0.1;
+                this.y += Math.sin(Date.now() * 0.005 + this.bobOffset) * 0.5;
+            }
+            
+            draw(ctx) {
+                ctx.save();
+                ctx.translate(this.x + this.width/2, this.y + this.height/2);
+                ctx.rotate(this.rotation);
+                
+                // 绘制金币
+                ctx.fillStyle = '#FFD700';
+                ctx.beginPath();
+                ctx.arc(0, 0, this.width/2, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // 金币装饰
+                ctx.fillStyle = '#FFA500';
+                ctx.beginPath();
+                ctx.arc(0, 0, this.width/3, 0, Math.PI * 2);
+                ctx.fill();
+                
+                ctx.restore();
+            }
+            
+            collidesWith(bird) {
+                return !this.collected &&
+                       bird.x < this.x + this.width &&
+                       bird.x + bird.width > this.x &&
+                       bird.y < this.y + this.height &&
+                       bird.y + bird.height > this.y;
+            }
+        }
+        
+        class PowerUp {
+            constructor(x, y, type) {
+                this.x = x;
+                this.y = y;
+                this.width = 30;
+                this.height = 30;
+                this.type = type;
+                this.collected = false;
+                this.bobOffset = Math.random() * Math.PI * 2;
+                
+                // 道具类型配置
+                this.configs = {
+                    shield: { color: '#00BFFF', icon: '🛡️', duration: 5000 },
+                    magnet: { color: '#FF69B4', icon: '🧲', duration: 8000 },
+                    slowmo: { color: '#9370DB', icon: '⏱️', duration: 6000 },
+                    doublescore: { color: '#32CD32', icon: '2️⃣', duration: 10000 },
+                    extralife: { color: '#FF6347', icon: '❤️', duration: 0 }
+                };
+            }
+            
+            update() {
+                this.x -= gameSpeed;
+                this.y += Math.sin(Date.now() * 0.003 + this.bobOffset) * 0.8;
+            }
+            
+            draw(ctx) {
+                const config = this.configs[this.type];
+                
+                // 绘制道具背景
+                ctx.fillStyle = config.color;
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+                
+                // 绘制道具图标（文字）
+                ctx.fillStyle = '#FFF';
+                ctx.font = '20px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(config.icon, this.x + this.width/2, this.y + this.height/2 + 6);
+                
+                // 发光效果
+                ctx.strokeStyle = config.color;
+                ctx.lineWidth = 2;
+                ctx.strokeRect(this.x - 2, this.y - 2, this.width + 4, this.height + 4);
+            }
+            
+            collidesWith(bird) {
+                return !this.collected &&
+                       bird.x < this.x + this.width &&
+                       bird.x + bird.width > this.x &&
+                       bird.y < this.y + this.height &&
+                       bird.y + bird.height > this.y;
+            }
+        }
+        
+        class Weapon {
+            constructor(type) {
+                this.type = type;
+                this.cooldown = 0;
+                this.bullets = [];
+                
+                this.configs = {
+                    laser: { cooldown: 5, speed: 15, damage: 1, color: '#FF0000' },
+                    rocket: { cooldown: 30, speed: 8, damage: 3, color: '#FFA500' },
+                    plasma: { cooldown: 10, speed: 12, damage: 2, color: '#00FF00' },
+                    freeze: { cooldown: 20, speed: 10, damage: 1, color: '#00FFFF' }
+                };
+            }
+            
+            fire(x, y) {
+                if (this.cooldown <= 0) {
+                    const config = this.configs[this.type];
+                    this.bullets.push({
+                        x: x,
+                        y: y,
+                        vx: config.speed,
+                        vy: 0,
+                        damage: config.damage,
+                        color: config.color,
+                        size: this.type === 'rocket' ? 8 : 5
+                    });
+                    this.cooldown = config.cooldown;
+                }
+            }
+            
+            update() {
+                if (this.cooldown > 0) this.cooldown--;
+                
+                for (let i = this.bullets.length - 1; i >= 0; i--) {
+                    const bullet = this.bullets[i];
+                    bullet.x += bullet.vx;
+                    bullet.y += bullet.vy;
+                    
+                    // 移除离开屏幕的子弹
+                    if (bullet.x > canvas.width || bullet.x < 0 || bullet.y > canvas.height || bullet.y < 0) {
+                        this.bullets.splice(i, 1);
+                    }
+                }
+            }
+            
+            draw(ctx) {
+                this.bullets.forEach(bullet => {
+                    ctx.fillStyle = bullet.color;
+                    ctx.beginPath();
+                    ctx.arc(bullet.x, bullet.y, bullet.size, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // 武器特效
+                    if (this.type === 'laser') {
+                        ctx.strokeStyle = bullet.color;
+                        ctx.lineWidth = 2;
+                        ctx.beginPath();
+                        ctx.moveTo(bullet.x - 10, bullet.y);
+                        ctx.lineTo(bullet.x + 10, bullet.y);
+                        ctx.stroke();
+                    }
+                });
+            }
+        }
+        
+        class EnhancedBoss {
+            constructor(type) {
+                this.type = type;
+                this.x = canvas.width - 120;
+                this.y = canvas.height / 2;
+                this.width = 100;
+                this.height = 100;
+                this.health = 20;
+                this.maxHealth = 20;
+                this.moveSpeed = 2;
+                this.shootTimer = 0;
+                this.bullets = [];
+                this.phase = 1;
+                
+                this.configs = {
+                    normal: { color: '#FF4500', shootRate: 60, bulletSpeed: 5 },
+                    fire: { color: '#DC143C', shootRate: 40, bulletSpeed: 6 },
+                    ice: { color: '#00BFFF', shootRate: 80, bulletSpeed: 4 },
+                    electric: { color: '#FFD700', shootRate: 30, bulletSpeed: 8 }
+                };
+            }
+            
+            update() {
+                const config = this.configs[this.type];
+                
+                // Boss移动模式
+                this.y += Math.sin(Date.now() * 0.005) * this.moveSpeed;
+                this.y = Math.max(50, Math.min(canvas.height - this.height - 50, this.y));
+                
+                // Boss射击
+                this.shootTimer++;
+                if (this.shootTimer >= config.shootRate) {
+                    this.shoot();
+                    this.shootTimer = 0;
+                }
+                
+                // 更新Boss子弹
+                for (let i = this.bullets.length - 1; i >= 0; i--) {
+                    const bullet = this.bullets[i];
+                    bullet.x += bullet.vx;
+                    bullet.y += bullet.vy;
+                    
+                    if (bullet.x < 0 || bullet.y < 0 || bullet.y > canvas.height) {
+                        this.bullets.splice(i, 1);
+                    }
+                }
+                
+                // 检查武器子弹碰撞
+                if (currentWeapon) {
+                    for (let i = currentWeapon.bullets.length - 1; i >= 0; i--) {
+                        const bullet = currentWeapon.bullets[i];
+                        if (bullet.x > this.x && bullet.x < this.x + this.width &&
+                            bullet.y > this.y && bullet.y < this.y + this.height) {
+                            this.health -= bullet.damage;
+                            currentWeapon.bullets.splice(i, 1);
+                            createParticles(bullet.x, bullet.y, '#FF0000', 5);
+                            
+                            if (this.health <= 0) {
+                                score += 100;
+                                coins += 10;
+                                this.onDestroy();
+                                return true; // Boss被消灭
+                            }
+                        }
+                    }
+                }
+                
+                return false;
+            }
+            
+            shoot() {
+                const config = this.configs[this.type];
+                
+                if (this.type === 'electric') {
+                    // 电击Boss：发射多颗子弹
+                    for (let i = 0; i < 3; i++) {
+                        this.bullets.push({
+                            x: this.x,
+                            y: this.y + this.height / 2 + (i - 1) * 20,
+                            vx: -config.bulletSpeed,
+                            vy: (i - 1) * 2,
+                            size: 6,
+                            color: config.color
+                        });
+                    }
+                } else {
+                    this.bullets.push({
+                        x: this.x,
+                        y: this.y + this.height / 2,
+                        vx: -config.bulletSpeed,
+                        vy: this.type === 'fire' ? Math.sin(Date.now() * 0.01) * 3 : 0,
+                        size: 8,
+                        color: config.color
+                    });
+                }
+            }
+            
+            draw(ctx) {
+                const config = this.configs[this.type];
+                
+                // 绘制Boss主体
+                ctx.fillStyle = config.color;
+                ctx.fillRect(this.x, this.y, this.width, this.height);
+                
+                // Boss装饰
+                ctx.fillStyle = '#FFF';
+                ctx.fillRect(this.x + 10, this.y + 15, 15, 15); // 眼睛1
+                ctx.fillRect(this.x + this.width - 25, this.y + 15, 15, 15); // 眼睛2
+                
+                // 血条
+                const barWidth = 120;
+                const barHeight = 10;
+                const barX = this.x - 10;
+                const barY = this.y - 20;
+                
+                ctx.fillStyle = '#FF0000';
+                ctx.fillRect(barX, barY, barWidth, barHeight);
+                ctx.fillStyle = '#00FF00';
+                ctx.fillRect(barX, barY, (this.health / this.maxHealth) * barWidth, barHeight);
+                
+                // Boss类型指示
+                ctx.fillStyle = '#FFF';
+                ctx.font = '12px Arial';
+                ctx.fillText(this.type.toUpperCase(), barX, barY - 5);
+                
+                // 绘制Boss子弹
+                this.bullets.forEach(bullet => {
+                    ctx.fillStyle = bullet.color;
+                    ctx.beginPath();
+                    ctx.arc(bullet.x, bullet.y, bullet.size, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // 特殊效果
+                    if (this.type === 'ice') {
+                        ctx.strokeStyle = '#87CEEB';
+                        ctx.lineWidth = 2;
+                        ctx.stroke();
+                    }
+                });
+            }
+            
+            onDestroy() {
+                createParticles(this.x + this.width/2, this.y + this.height/2, '#FFD700', 50);
+                boss = null;
+            }
+        }
+        
+        // ==================== 游戏变量 ====================
+        
+        let gameState = 'start';
+        let currentMode = 'classic';
+        let score = 0;
+        let coins = parseInt(localStorage.getItem('flappyCoins')) || 0;
+        let highScore = localStorage.getItem('flappyHighScore') || 0;
+        let timeLeft = 90;
+        let lives = 1;
+        let gameSpeed = 2;
+        let isReverse = false;
+        
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // 游戏实体
+        let bird = {
+            x: 100,
+            y: canvas.height / 2,
+            width: 30,
+            height: 25,
+            velocity: 0,
+            gravity: 0.6,
+            jump: -12,
+            color: '#FFD700',
+            invulnerable: false,
+            invulnerableTimer: 0
+        };
+        
+        let pipes = [];
+        let particles = [];
+        let gameCoins = []; // 游戏中的金币
+        let powerUps = [];
+        let activePowerUps = {}; // 激活的道具效果
+        let boss = null;
+        
+        // 武器系统
+        let currentWeapon = new Weapon('laser');
+        let weapons = {
+            laser: new Weapon('laser'),
+            rocket: new Weapon('rocket'),
+            plasma: new Weapon('plasma'),
+            freeze: new Weapon('freeze')
+        };
+        
+        let backgroundOffset = 0;
+        let earnedCoinsThisGame = 0;
+        
+        // ==================== 游戏逻辑函数 ====================
+        
+        function updateUI() {
+            document.getElementById('score').textContent = score;
+            document.getElementById('highScore').textContent = highScore;
+            document.getElementById('coins').textContent = coins;
+            document.getElementById('timeLeft').textContent = Math.max(0, Math.floor(timeLeft));
+            document.getElementById('lives').textContent = lives;
+            
+            // 显示/隐藏特定UI
+            document.getElementById('timeDisplay').style.display = currentMode === 'timed' ? 'block' : 'none';
+            document.getElementById('livesDisplay').style.display = activePowerUps.extralife ? 'block' : 'none';
+            document.getElementById('weaponDisplay').style.display = currentMode === 'boss' ? 'block' : 'none';
+            
+            // 更新激活道具显示
+            updateActivePowerUpsDisplay();
+        }
+        
+        function updateActivePowerUpsDisplay() {
+            const display = document.getElementById('activePowerUps');
+            let html = '';
+            
+            Object.keys(activePowerUps).forEach(type => {
+                const powerUp = activePowerUps[type];
+                const remaining = Math.ceil(powerUp.timeLeft / 1000);
+                const icon = {
+                    shield: '🛡️',
+                    magnet: '🧲',
+                    slowmo: '⏱️',
+                    doublescore: '2️⃣',
+                    extralife: '❤️'
+                }[type];
+                
+                if (type !== 'extralife') {
+                    html += `<div>${icon} ${remaining}s</div>`;
+                } else {
+                    html += `<div>${icon} +${powerUp.value}</div>`;
+                }
+            });
+            
+            display.innerHTML = html;
+        }
+        
+        function initGame() {
+            bird.x = 100;
+            bird.y = canvas.height / 2;
+            bird.velocity = 0;
+            bird.invulnerable = false;
+            bird.invulnerableTimer = 0;
+            
+            pipes = [];
+            particles = [];
+            gameCoins = [];
+            powerUps = [];
+            activePowerUps = {};
+            boss = null;
+            
+            score = 0;
+            timeLeft = 90;
+            lives = activePowerUps.extralife ? activePowerUps.extralife.value : 1;
+            backgroundOffset = 0;
+            earnedCoinsThisGame = 0;
+            
+            // 重置武器
+            Object.values(weapons).forEach(weapon => {
+                weapon.bullets = [];
+                weapon.cooldown = 0;
+            });
+            
+            // 根据模式设置
+            switch(currentMode) {
+                case 'classic':
+                    gameSpeed = 2;
+                    isReverse = false;
+                    bird.gravity = 0.6;
+                    bird.jump = -12;
+                    break;
+                case 'timed':
+                    gameSpeed = 2.5;
+                    isReverse = false;
+                    bird.gravity = 0.6;
+                    bird.jump = -12;
+                    break;
+                case 'reverse':
+                    gameSpeed = 2;
+                    isReverse = true;
+                    bird.gravity = -0.6;
+                    bird.jump = 12;
+                    break;
+                case 'boss':
+                    gameSpeed = 1.5;
+                    isReverse = false;
+                    bird.gravity = 0.6;
+                    bird.jump = -12;
+                    createBoss();
+                    break;
+                case 'coin':
+                    gameSpeed = 2;
+                    isReverse = false;
+                    bird.gravity = 0.6;
+                    bird.jump = -12;
+                    break;
+            }
+            
+            updateUI();
+        }
+        
+        function startGame() {
+            gameState = 'playing';
+            document.getElementById('startScreen').style.display = 'none';
+            document.getElementById('gameOverScreen').style.display = 'none';
+            document.getElementById('gameTitle').style.display = 'none';
+            initGame();
+            gameLoop();
+        }
+        
+        function restartGame() {
+            startGame();
+        }
+        
+        function resumeGame() {
+            gameState = 'playing';
+            document.getElementById('pauseScreen').style.display = 'none';
+            gameLoop();
+        }
+        
+        function goHome() {
+            window.location.href = '/';
+        }
+        
+        function gameOver() {
+            gameState = 'gameOver';
+            
+            // 保存金币
+            coins += earnedCoinsThisGame;
+            localStorage.setItem('flappyCoins', coins);
+            
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('bestScore').textContent = highScore;
+            document.getElementById('earnedCoins').textContent = earnedCoinsThisGame;
+            document.getElementById('gameOverScreen').style.display = 'block';
+            
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('flappyHighScore', highScore);
+                createFireworks();
+            }
+            
+            // 发送分数到服务器
+            if (typeof fetch !== 'undefined') {
+                try {
+                    fetch('/api/users/score', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            token: localStorage.getItem('userToken'),
+                            score: score,
+                            playtime: currentMode === 'timed' ? (90 - timeLeft) : Math.floor(score / 2),
+                            coins: earnedCoinsThisGame
+                        })
+                    }).catch(e => console.log('分数上传失败:', e));
+                } catch(e) {}
+            }
+        }
+        
+        // ==================== 继续添加其他函数... ====================
+        
+        // 由于字符限制，我将在下一个编辑中继续添加剩余的函数
+        
+        // 创建Boss
+        function createBoss() {
+            const bossTypes = ['normal', 'fire', 'ice', 'electric'];
+            const randomType = bossTypes[Math.floor(Math.random() * bossTypes.length)];
+            boss = new EnhancedBoss(randomType);
+        }
+        
+        // 创建管道
+        function createPipe() {
+            const gap = 150;
+            const minHeight = 50;
+            const maxHeight = canvas.height - gap - minHeight;
+            const height = Math.random() * (maxHeight - minHeight) + minHeight;
+            
+            pipes.push({
+                x: canvas.width,
+                topHeight: height,
+                bottomY: height + gap,
+                bottomHeight: canvas.height - height - gap,
+                width: 80,
+                passed: false,
+                color: '#228B22'
+            });
+        }
+        
+        // 创建金币
+        function createCoin() {
+            if (Math.random() < 0.3) { // 30%概率生成金币
+                gameCoins.push(new Coin(
+                    canvas.width + Math.random() * 200,
+                    Math.random() * (canvas.height - 200) + 100
+                ));
+            }
+        }
+        
+        // 创建道具
+        function createPowerUp() {
+            if (Math.random() < 0.1) { // 10%概率生成道具
+                const types = ['shield', 'magnet', 'slowmo', 'doublescore', 'extralife'];
+                const randomType = types[Math.floor(Math.random() * types.length)];
+                powerUps.push(new PowerUp(
+                    canvas.width + Math.random() * 300,
+                    Math.random() * (canvas.height - 200) + 100,
+                    randomType
+                ));
+            }
+        }
+        
+        // 创建粒子效果
+        function createParticles(x, y, color = '#FFD700', count = 5) {
+            for (let i = 0; i < count; i++) {
+                particles.push({
+                    x: x,
+                    y: y,
+                    vx: (Math.random() - 0.5) * 10,
+                    vy: (Math.random() - 0.5) * 10,
+                    life: 30,
+                    color: color,
+                    size: Math.random() * 4 + 2
+                });
+            }
+        }
+        
+        // 创建烟花效果
+        function createFireworks() {
+            for (let i = 0; i < 3; i++) {
+                setTimeout(() => {
+                    createParticles(
+                        Math.random() * canvas.width,
+                        Math.random() * canvas.height,
+                        `hsl(${Math.random() * 360}, 100%, 50%)`,
+                        20
+                    );
+                }, i * 200);
+            }
+        }
+        
+        // 跳跃
+        function jump() {
+            if (gameState === 'playing') {
+                bird.velocity = bird.jump;
+                createParticles(bird.x, bird.y, bird.color, 3);
+            }
+        }
+        
+        // 激活道具效果
+        function activatePowerUp(type) {
+            const powerUpConfig = {
+                shield: { duration: 5000 },
+                magnet: { duration: 8000 },
+                slowmo: { duration: 6000 },
+                doublescore: { duration: 10000 },
+                extralife: { duration: 0, value: 1 }
+            };
+            
+            const config = powerUpConfig[type];
+            
+            if (type === 'extralife') {
+                lives++;
+                activePowerUps.extralife = { value: lives, timeLeft: 0 };
+            } else {
+                activePowerUps[type] = {
+                    timeLeft: config.duration,
+                    startTime: Date.now()
+                };
+                
+                // 特殊效果
+                if (type === 'shield') {
+                    bird.invulnerable = true;
+                    bird.color = '#00BFFF';
+                } else if (type === 'slowmo') {
+                    gameSpeed *= 0.5;
+                }
+            }
+        }
+        
+        // 更新道具效果
+        function updatePowerUpEffects() {
+            Object.keys(activePowerUps).forEach(type => {
+                const powerUp = activePowerUps[type];
+                
+                if (type !== 'extralife' && powerUp.timeLeft > 0) {
+                    powerUp.timeLeft -= 16; // 假设60FPS，每帧约16ms
+                    
+                    if (powerUp.timeLeft <= 0) {
+                        // 道具效果结束
+                        if (type === 'shield') {
+                            bird.invulnerable = false;
+                            bird.color = '#FFD700';
+                        } else if (type === 'slowmo') {
+                            gameSpeed = currentMode === 'timed' ? 2.5 : 2;
+                        }
+                        
+                        delete activePowerUps[type];
+                    }
+                }
+            });
+        }
+        
+        // 磁铁效果：吸引金币
+        function applyMagnetEffect() {
+            if (activePowerUps.magnet) {
+                gameCoins.forEach(coin => {
+                    if (!coin.collected) {
+                        const dx = bird.x - coin.x;
+                        const dy = bird.y - coin.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (distance < 100) {
+                            coin.x += dx * 0.1;
+                            coin.y += dy * 0.1;
+                        }
+                    }
+                });
+            }
+        }
+        
+        // 检查碰撞
+        function checkCollisions() {
+            // 金币碰撞
+            gameCoins.forEach(coin => {
+                if (coin.collidesWith(bird) && !coin.collected) {
+                    coin.collected = true;
+                    earnedCoinsThisGame++;
+                    
+                    const scoreIncrease = activePowerUps.doublescore ? 2 : 1;
+                    score += scoreIncrease;
+                    
+                    createParticles(coin.x, coin.y, '#FFD700', 8);
+                }
+            });
+            
+            // 道具碰撞
+            powerUps.forEach(powerUp => {
+                if (powerUp.collidesWith(bird) && !powerUp.collected) {
+                    powerUp.collected = true;
+                    activatePowerUp(powerUp.type);
+                    createParticles(powerUp.x, powerUp.y, powerUp.configs[powerUp.type].color, 10);
+                }
+            });
+            
+            // Boss子弹碰撞
+            if (boss) {
+                boss.bullets.forEach(bullet => {
+                    if (Math.abs(bullet.x - bird.x) < bird.width &&
+                        Math.abs(bullet.y - bird.y) < bird.height) {
+                        if (!bird.invulnerable) {
+                            if (lives > 1) {
+                                lives--;
+                                bird.invulnerable = true;
+                                bird.invulnerableTimer = 120; // 2秒无敌时间
+                                createParticles(bird.x, bird.y, '#FF0000', 15);
+                            } else {
+                                gameOver();
+                                return;
+                            }
+                        }
+                    }
+                });
+            }
+        }
+        
+        // 更新游戏逻辑
+        function update() {
+            if (gameState !== 'playing') return;
+            
+            // 更新小鸟
+            bird.velocity += bird.gravity;
+            bird.y += bird.velocity;
+            
+            // 更新无敌状态
+            if (bird.invulnerableTimer > 0) {
+                bird.invulnerableTimer--;
+                if (bird.invulnerableTimer <= 0) {
+                    bird.invulnerable = false;
+                    bird.color = '#FFD700';
+                }
+            }
+            
+            // 边界检查
+            if (bird.y <= 0 || bird.y >= canvas.height - bird.height) {
+                if (!bird.invulnerable) {
+                    if (lives > 1) {
+                        lives--;
+                        bird.y = canvas.height / 2;
+                        bird.velocity = 0;
+                        bird.invulnerable = true;
+                        bird.invulnerableTimer = 120;
+                        createParticles(bird.x, bird.y, '#FF0000', 15);
+                    } else {
+                        gameOver();
+                        return;
+                    }
+                }
+            }
+            
+            // 更新背景
+            backgroundOffset -= gameSpeed;
+            if (backgroundOffset <= -50) backgroundOffset = 0;
+            
+            // 更新管道（非Boss模式）
+            if (currentMode !== 'boss') {
+                if (pipes.length === 0 || pipes[pipes.length - 1].x < canvas.width - 300) {
+                    createPipe();
+                }
+                
+                for (let i = pipes.length - 1; i >= 0; i--) {
+                    const pipe = pipes[i];
+                    pipe.x -= gameSpeed;
+                    
+                    if (!bird.invulnerable && 
+                        bird.x + bird.width > pipe.x && 
+                        bird.x < pipe.x + pipe.width) {
+                        if (bird.y < pipe.topHeight || 
+                            bird.y + bird.height > pipe.bottomY) {
+                            if (lives > 1) {
+                                lives--;
+                                bird.y = canvas.height / 2;
+                                bird.velocity = 0;
+                                bird.invulnerable = true;
+                                bird.invulnerableTimer = 120;
+                                createParticles(bird.x, bird.y, '#FF0000', 15);
+                            } else {
+                                gameOver();
+                                return;
+                            }
+                        }
+                    }
+                    
+                    if (!pipe.passed && bird.x > pipe.x + pipe.width) {
+                        pipe.passed = true;
+                        const scoreIncrease = activePowerUps.doublescore ? 2 : 1;
+                        score += scoreIncrease;
+                        createParticles(pipe.x + pipe.width, canvas.height / 2, '#00FF00', 8);
+                    }
+                    
+                    if (pipe.x + pipe.width < 0) {
+                        pipes.splice(i, 1);
+                    }
+                }
+            }
+            
+            // Boss模式更新
+            if (currentMode === 'boss' && boss) {
+                const bossDestroyed = boss.update();
+                if (bossDestroyed) {
+                    createBoss(); // 生成新Boss
+                }
+            }
+            
+            // 更新武器
+            if (currentMode === 'boss') {
+                Object.values(weapons).forEach(weapon => weapon.update());
+            }
+            
+            // 金币模式或随机生成金币
+            if (currentMode === 'coin' || Math.random() < 0.02) {
+                createCoin();
+            }
+            
+            // 随机生成道具
+            if (Math.random() < 0.005) {
+                createPowerUp();
+            }
+            
+            // 更新金币
+            for (let i = gameCoins.length - 1; i >= 0; i--) {
+                const coin = gameCoins[i];
+                coin.update();
+                
+                if (coin.x + coin.width < 0) {
+                    gameCoins.splice(i, 1);
+                }
+            }
+            
+            // 更新道具
+            for (let i = powerUps.length - 1; i >= 0; i--) {
+                const powerUp = powerUps[i];
+                powerUp.update();
+                
+                if (powerUp.x + powerUp.width < 0) {
+                    powerUps.splice(i, 1);
+                }
+            }
+            
+            // 更新粒子
+            for (let i = particles.length - 1; i >= 0; i--) {
+                const particle = particles[i];
+                particle.x += particle.vx;
+                particle.y += particle.vy;
+                particle.life--;
+                particle.vx *= 0.98;
+                particle.vy *= 0.98;
+                
+                if (particle.life <= 0) {
+                    particles.splice(i, 1);
+                }
+            }
+            
+            // 限时模式倒计时
+            if (currentMode === 'timed') {
+                timeLeft -= 1/60;
+                if (timeLeft <= 0) {
+                    gameOver();
+                    return;
+                }
+            }
+            
+            // 更新道具效果
+            updatePowerUpEffects();
+            
+            // 应用磁铁效果
+            applyMagnetEffect();
+            
+            // 检查碰撞
+            checkCollisions();
+            
+            updateUI();
+        }
+        
+        // 渲染游戏
+        function render() {
+            // 清空画布
+            ctx.fillStyle = '#87CEEB';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // 绘制移动的云朵背景
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            for (let i = 0; i < 5; i++) {
+                const x = (i * 200 + backgroundOffset) % (canvas.width + 100);
+                const y = 50 + i * 30;
+                drawCloud(x, y);
+            }
+            
+            // 绘制地面
+            ctx.fillStyle = '#32CD32';
+            ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
+            
+            // 绘制管道（非Boss模式）
+            if (currentMode !== 'boss') {
+                ctx.fillStyle = '#228B22';
+                pipes.forEach(pipe => {
+                    ctx.fillRect(pipe.x, 0, pipe.width, pipe.topHeight);
+                    ctx.fillRect(pipe.x, pipe.bottomY, pipe.width, pipe.bottomHeight);
+                    
+                    ctx.fillStyle = '#2F4F2F';
+                    ctx.fillRect(pipe.x - 5, pipe.topHeight - 30, pipe.width + 10, 30);
+                    ctx.fillRect(pipe.x - 5, pipe.bottomY, pipe.width + 10, 30);
+                    ctx.fillStyle = '#228B22';
+                });
+            }
+            
+            // 绘制Boss
+            if (boss) {
+                boss.draw(ctx);
+            }
+            
+            // 绘制武器子弹
+            if (currentMode === 'boss') {
+                Object.values(weapons).forEach(weapon => weapon.draw(ctx));
+            }
+            
+            // 绘制金币
+            gameCoins.forEach(coin => {
+                if (!coin.collected) {
+                    coin.draw(ctx);
+                }
+            });
+            
+            // 绘制道具
+            powerUps.forEach(powerUp => {
+                if (!powerUp.collected) {
+                    powerUp.draw(ctx);
+                }
+            });
+            
+            // 绘制小鸟
+            ctx.fillStyle = bird.color;
+            if (bird.invulnerable && bird.invulnerableTimer % 10 < 5) {
+                ctx.globalAlpha = 0.5; // 闪烁效果
+            }
+            ctx.fillRect(bird.x, bird.y, bird.width, bird.height);
+            ctx.globalAlpha = 1;
+            
+            // 小鸟装饰
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(bird.x + 18, bird.y + 5, 4, 4);
+            ctx.fillStyle = '#FFA500';
+            ctx.fillRect(bird.x + bird.width, bird.y + 10, 8, 4);
+            
+            const wingOffset = Math.sin(Date.now() * 0.02) * 3;
+            ctx.fillStyle = '#FFB347';
+            ctx.fillRect(bird.x + 5, bird.y + 12 + wingOffset, 15, 8);
+            
+            // 绘制粒子
+            particles.forEach(particle => {
+                ctx.globalAlpha = particle.life / 30;
+                ctx.fillStyle = particle.color;
+                ctx.beginPath();
+                ctx.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.globalAlpha = 1;
+        }
+        
+        // 绘制云朵
+        function drawCloud(x, y) {
+            ctx.beginPath();
+            ctx.arc(x, y, 20, 0, Math.PI * 2);
+            ctx.arc(x + 25, y, 35, 0, Math.PI * 2);
+            ctx.arc(x + 50, y, 20, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        // 商店功能
+        function openShop() {
+            alert('🛒 商店功能开发中\n敬请期待更多道具和武器！');
+        }
+        
+        // 游戏主循环
+        function gameLoop() {
+            if (gameState === 'playing') {
+                update();
+                render();
+                requestAnimationFrame(gameLoop);
+            }
+        }
+        
+        // ==================== 事件监听 ====================
+        
+        // 鼠标点击
+        canvas.addEventListener('click', (e) => {
+            if (currentMode === 'boss' && gameState === 'playing') {
+                // Boss模式下点击发射武器
+                currentWeapon.fire(bird.x + bird.width, bird.y + bird.height/2);
+            } else {
+                jump();
+            }
+        });
+        
+        // 键盘事件
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                e.preventDefault();
+                if (gameState === 'playing') {
+                    if (currentMode === 'boss') {
+                        currentWeapon.fire(bird.x + bird.width, bird.y + bird.height/2);
+                    } else {
+                        jump();
+                    }
+                } else if (gameState === 'paused') {
+                    resumeGame();
+                } else if (gameState === 'start') {
+                    startGame();
+                }
+            } else if (e.code === 'KeyP' && gameState === 'playing') {
+                gameState = 'paused';
+                document.getElementById('pauseScreen').style.display = 'block';
+            }
+            
+            // 武器切换（Boss模式）
+            if (currentMode === 'boss' && gameState === 'playing') {
+                if (e.code === 'Digit1') currentWeapon = weapons.laser;
+                else if (e.code === 'Digit2') currentWeapon = weapons.rocket;
+                else if (e.code === 'Digit3') currentWeapon = weapons.plasma;
+                else if (e.code === 'Digit4') currentWeapon = weapons.freeze;
+                
+                // 更新武器按钮状态
+                document.querySelectorAll('.weapon-button').forEach(btn => btn.classList.remove('active'));
+                document.querySelector(`[data-weapon="${currentWeapon.type}"]`).classList.add('active');
+            }
+        });
+        
+        // 触摸事件
+        canvas.addEventListener('touchstart', (e) => {
+            e.preventDefault();
+            if (currentMode === 'boss' && gameState === 'playing') {
+                currentWeapon.fire(bird.x + bird.width, bird.y + bird.height/2);
+            } else {
+                jump();
+            }
+        });
+        
+        // 模式切换
+        document.querySelectorAll('.mode-button').forEach(button => {
+            button.addEventListener('click', () => {
+                document.querySelectorAll('.mode-button').forEach(b => b.classList.remove('active'));
+                button.classList.add('active');
+                currentMode = button.dataset.mode;
+                
+                if (gameState === 'playing') {
+                    initGame();
+                }
+            });
+        });
+        
+        // 武器切换按钮
+        document.querySelectorAll('.weapon-button').forEach(button => {
+            button.addEventListener('click', () => {
+                document.querySelectorAll('.weapon-button').forEach(b => b.classList.remove('active'));
+                button.classList.add('active');
+                currentWeapon = weapons[button.dataset.weapon];
+            });
+        });
+        
+        // 防止页面滚动
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'ArrowDown') {
+                e.preventDefault();
+            }
+        });
+        
+        // 初始化
+        updateUI();
+        render();
+    </script>
+</body>
+</html> 
