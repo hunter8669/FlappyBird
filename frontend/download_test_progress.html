@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>下载进度测试 - FlapPy Bird</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            color: white;
+        }
+        
+        .test-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 15px;
+            padding: 2rem;
+            text-align: center;
+            max-width: 600px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            padding: 1rem 2rem;
+            margin: 0.5rem;
+            border: none;
+            border-radius: 8px;
+            text-decoration: none;
+            color: white;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .btn-primary { background: #16a34a; }
+        .btn-primary:hover { background: #15803d; transform: translateY(-2px); }
+        .btn-secondary { background: #ea580c; }
+        .btn-secondary:hover { background: #c2410c; transform: translateY(-2px); }
+        
+        .info-box {
+            background: rgba(255,255,255,0.1);
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+            text-align: left;
+            font-size: 0.9rem;
+        }
+        
+        .progress-info {
+            background: rgba(255, 215, 0, 0.2);
+            border-left: 4px solid #ffd700;
+            padding: 1rem;
+            margin: 1rem 0;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🐦 FlapPy Bird 下载测试</h1>
+        <p>测试浏览器原生下载进度显示</p>
+        
+        <div class="progress-info">
+            <strong>📊 下载进度显示说明：</strong><br>
+            • 点击下载按钮后，浏览器下载栏会显示下载进度<br>
+            • Chrome: 底部显示下载条<br>
+            • Firefox: 右上角下载图标显示进度<br>
+            • Edge: 底部或顶部显示下载通知
+        </div>
+        
+        <button class="btn btn-primary" onclick="testDirectDownload()">
+            ⚡ 测试直接EXE下载 (254MB)
+        </button>
+        
+        <button class="btn btn-secondary" onclick="testSmallDownload()">
+            🧪 测试小文件下载 (验证功能)
+        </button>
+        
+        <div class="info-box">
+            <strong>🔍 测试说明：</strong><br>
+            1. 第一个按钮下载完整的EXE游戏文件<br>
+            2. 第二个按钮下载服务器健康检查信息（小文件）<br>
+            3. 观察浏览器下载栏的进度显示<br>
+            4. 大文件下载时进度条更明显
+        </div>
+        
+        <div id="status" style="margin-top: 1rem; padding: 0.5rem; border-radius: 5px; display: none;"></div>
+        
+        <a href="/" class="btn btn-secondary" style="margin-top: 1rem;">🏠 返回主页</a>
+    </div>
+    
+    <script>
+        function showStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('status');
+            statusDiv.style.display = 'block';
+            statusDiv.style.background = type === 'success' ? 'rgba(34, 197, 94, 0.2)' : 'rgba(59, 130, 246, 0.2)';
+            statusDiv.textContent = message;
+            
+            setTimeout(() => {
+                statusDiv.style.display = 'none';
+            }, 3000);
+        }
+        
+        function testDirectDownload() {
+            showStatus('正在启动EXE下载，请观察浏览器下载栏...', 'info');
+            
+            // 创建下载链接
+            const link = document.createElement('a');
+            link.href = '/api/downloads/desktop';
+            link.download = 'FlapPyBird.exe';
+            link.style.display = 'none';
+            
+            // 触发下载
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            setTimeout(() => {
+                showStatus('EXE下载已启动！请查看浏览器下载栏的进度', 'success');
+            }, 500);
+        }
+        
+        function testSmallDownload() {
+            showStatus('正在下载小测试文件...', 'info');
+            
+            // 下载健康检查信息
+            const link = document.createElement('a');
+            link.href = '/health';
+            link.download = 'server_health.json';
+            link.style.display = 'none';
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            setTimeout(() => {
+                showStatus('小文件下载已启动！', 'success');
+            }, 500);
+        }
+    </script>
+</body>
+</html> 

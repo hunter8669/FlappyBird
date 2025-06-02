@@ -486,6 +486,12 @@
                         <span class="emoji">⚡</span>
                         <span class="pixel-font">直接下载EXE</span>
                     </button>
+                    <div style="text-align: center; margin-top: 1rem; padding: 0.8rem; background: rgba(255,255,255,0.1); border-radius: 8px; font-size: 0.85rem;">
+                        <div style="color: #ffd700; margin-bottom: 0.5rem;">📥 下载说明</div>
+                        <div style="color: #e8f4f8;">• 点击下载后浏览器将显示下载进度</div>
+                        <div style="color: #e8f4f8;">• 下载的是254MB的EXE独立文件</div>
+                        <div style="color: #e8f4f8;">• 下载完成后双击即可游戏</div>
+                    </div>
                 </div>
                 <div class="download-card">
                     <div class="download-header">
@@ -546,68 +552,28 @@
                         console.log('开始下载游戏文件...');
                         
                         // 显示下载中状态
-                        downloadBtn.innerHTML = '<span>⏳</span><span class="pixel-font">下载中...</span>';
+                        downloadBtn.innerHTML = '<span>⏳</span><span class="pixel-font">准备下载...</span>';
                         downloadBtn.disabled = true;
                         
-                        // 使用fetch+blob下载，确保文件完整性
-                        const response = await fetch('/api/downloads/desktop');
+                        // 方案1：使用浏览器原生下载（显示进度条）
+                        const downloadLink = document.createElement('a');
+                        downloadLink.href = '/api/downloads/desktop';
+                        downloadLink.download = 'FlapPyBird.exe';
+                        downloadLink.style.display = 'none';
                         
-                        if (!response.ok) {
-                            const errorText = await response.text();
-                            console.error('服务器响应:', errorText);
-                            throw new Error(`下载失败: ${response.status} ${response.statusText}`);
-                        }
+                        // 添加到页面并触发下载
+                        document.body.appendChild(downloadLink);
+                        downloadLink.click();
+                        document.body.removeChild(downloadLink);
                         
-                        // 检查响应头
-                        const contentType = response.headers.get('Content-Type');
-                        const contentLength = response.headers.get('Content-Length');
-                        console.log(`文件类型: ${contentType}, 大小: ${contentLength} bytes`);
+                        console.log('下载已启动，浏览器将显示下载进度...');
                         
-                        // 获取blob对象
-                        const blob = await response.blob();
-                        console.log(`下载完成: ${blob.size} bytes (${(blob.size/1024/1024).toFixed(1)} MB)`);
+                        // 显示成功提示
+                        downloadBtn.innerHTML = '<span>✅</span><span class="pixel-font">下载已开始</span>';
                         
-                        // 检查文件大小
-                        if (blob.size === 0) {
-                            throw new Error('下载的文件为空，请联系管理员检查服务器文件');
-                        }
-                        
-                        // 检查是否为Git LFS指针文件（通常很小）
-                        if (blob.size < 1000) {
-                            const textContent = await blob.text();
-                            if (textContent.includes('git-lfs.github.com')) {
-                                // 这是Git LFS指针文件，后端应该已经自动切换到源码版本
-                                // 但如果我们收到的还是LFS指针，说明后端切换失败
-                                console.log('收到Git LFS指针文件，后端切换可能失败');
-                                throw new Error('检测到Git LFS问题：EXE文件被Git LFS管理无法直接下载。\n\n解决方案：\n1. 访问 /download_debug.html 进行详细调试\n2. 或联系管理员处理LFS配置\n3. 临时方案：直接运行源码版 game-desktop/main.py');
-                            } else {
-                                throw new Error('下载的文件异常小，可能是服务器错误信息而非游戏文件');
-                            }
-                        }
-                        
-                        // 验证文件是否为ZIP格式（如果大小足够）
-                        if (blob.size >= 4) {
-                            const firstBytes = await blob.slice(0, 4).arrayBuffer();
-                            const uint8Array = new Uint8Array(firstBytes);
-                            if (uint8Array[0] !== 0x50 || uint8Array[1] !== 0x4B) {
-                                console.warn('文件可能不是ZIP格式，但仍尝试下载');
-                            }
-                        }
-                        
-                        // 创建下载链接
-                        const url = window.URL.createObjectURL(blob);
-                        const link = document.createElement('a');
-                        link.href = url;
-                        link.download = 'FlapPyBird.exe';
-                        link.style.display = 'none';
-                        
-                        // 触发下载
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
-                        window.URL.revokeObjectURL(url);
-                        
-                        console.log('下载已开始...');
+                        setTimeout(() => {
+                            alert('🎉 下载已开始！\n\n文件名: FlapPyBird.exe (约254MB)\n\n✨ 浏览器下载栏将显示下载进度\n✨ 下载完成后双击EXE文件即可游戏！\n✨ 无需解压，无需安装Python！');
+                        }, 500);
                         
                         // 记录下载统计
                         try {
@@ -627,22 +593,15 @@
                             console.error('记录统计失败:', trackError);
                         }
                         
-                        // 显示下载成功提示
-                        setTimeout(() => {
-                            if (blob.size > 0) {
-                                alert('🎉 下载完成！\n\n文件名: FlapPyBird.exe\n\n使用方法:\n直接双击"FlapPyBird.exe"即可游戏！\n\n✨ 无需解压，无需安装Python，即开即用！');
-                            } else {
-                                alert('⚠️ 下载的文件可能有问题\n\n请联系技术支持');
-                            }
-                        }, 1000);
-                        
                     } catch (error) {
                         console.error('下载请求失败:', error);
-                        alert(`⚠️ 下载失败\n\n错误信息: ${error.message}\n\n解决方案:\n1. 请访问 /download_debug.html 进行详细调试\n2. 或联系技术支持\n3. 临时方案: 直接运行源码版 game-desktop/main.py`);
+                        alert(`⚠️ 下载失败\n\n错误信息: ${error.message}\n\n请重试或联系技术支持`);
                     } finally {
-                        // 恢复按钮状态
-                        downloadBtn.innerHTML = originalBtnText;
-                        downloadBtn.disabled = false;
+                        // 3秒后恢复按钮状态
+                        setTimeout(() => {
+                            downloadBtn.innerHTML = originalBtnText;
+                            downloadBtn.disabled = false;
+                        }, 3000);
                     }
                 });
             }
