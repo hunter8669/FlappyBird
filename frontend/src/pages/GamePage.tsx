@@ -1,8 +1,12 @@
-import { useState } from 'react'
+import { useEffect } from 'react'
 import { AlertCircle, Info, Play, Download, ExternalLink } from 'lucide-react'
 
 const GamePage = () => {
-  const [gameLoaded, setGameLoaded] = useState(false)
+  // 自动跳转到真正的Web版游戏
+  useEffect(() => {
+    // 立即跳转到实际的游戏页面
+    window.location.href = '/game.html'
+  }, [])
 
   // 启动桌面版游戏指导
   const handlePlayDesktop = () => {
@@ -17,64 +21,61 @@ const GamePage = () => {
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       <div className="text-center mb-8">
-        <h1 className="pixel-font text-3xl text-white mb-4">🎮 在线游戏</h1>
+        <h1 className="pixel-font text-3xl text-white mb-4">🎮 正在跳转到游戏...</h1>
         <p className="text-gray-100">
-          Web版FlapPy Bird - 直接在浏览器中畅玩！
+          即将进入Web版FlapPy Bird游戏
         </p>
+        
+        {/* 如果自动跳转失败的备用链接 */}
+        <div className="mt-6">
+          <a 
+            href="/game.html" 
+            className="inline-block bg-blue-500 hover:bg-blue-600 text-white py-3 px-6 rounded-lg transition-colors"
+          >
+            🎮 点击这里手动进入游戏
+          </a>
+        </div>
       </div>
 
       {/* 游戏容器 */}
       <div className="bg-white bg-opacity-20 backdrop-blur-sm rounded-lg p-6 mb-8">
         <div className="flex justify-center">
-          {!gameLoaded ? (
-            <div className="w-full max-w-2xl">
-              {/* 游戏加载占位符 */}
-              <div className="bg-gray-800 rounded-lg p-8 text-center">
-                <div className="text-6xl mb-4">🐦</div>
-                <h3 className="pixel-font text-xl text-white mb-4">游戏准备中...</h3>
-                <p className="text-gray-300 mb-6">
-                  Web版游戏正在开发中，即将上线！
-                </p>
+          <div className="w-full max-w-2xl">
+            {/* 游戏加载占位符 */}
+            <div className="bg-gray-800 rounded-lg p-8 text-center">
+              <div className="text-6xl mb-4">🐦</div>
+              <h3 className="pixel-font text-xl text-white mb-4">游戏准备中...</h3>
+              <p className="text-gray-300 mb-6">
+                Web版游戏正在开发中，即将上线！
+              </p>
+              
+              {/* 临时解决方案按钮 */}
+              <div className="space-y-4">
+                <button 
+                  onClick={handlePlayDesktop}
+                  className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 px-6 rounded-lg transition-colors flex items-center justify-center"
+                >
+                  <Play className="w-5 h-5 mr-2" />
+                  <span className="pixel-font">启动桌面版游戏</span>
+                </button>
                 
-                {/* 临时解决方案按钮 */}
-                <div className="space-y-4">
-                  <button 
-                    onClick={handlePlayDesktop}
-                    className="w-full bg-blue-500 hover:bg-blue-600 text-white py-3 px-6 rounded-lg transition-colors flex items-center justify-center"
-                  >
-                    <Play className="w-5 h-5 mr-2" />
-                    <span className="pixel-font">启动桌面版游戏</span>
-                  </button>
-                  
-                  <button 
-                    onClick={handleGoToDownload}
-                    className="w-full bg-green-500 hover:bg-green-600 text-white py-3 px-6 rounded-lg transition-colors flex items-center justify-center"
-                  >
-                    <Download className="w-5 h-5 mr-2" />
-                    <span className="pixel-font">下载完整版</span>
-                  </button>
-                </div>
-                
-                <div className="bg-yellow-500 bg-opacity-20 border border-yellow-400 rounded-lg p-4 mt-6">
-                  <div className="flex items-center justify-center text-yellow-300">
-                    <Info className="w-5 h-5 mr-2" />
-                    <span className="text-sm">目前可以下载桌面版体验完整游戏</span>
-                  </div>
+                <button 
+                  onClick={handleGoToDownload}
+                  className="w-full bg-green-500 hover:bg-green-600 text-white py-3 px-6 rounded-lg transition-colors flex items-center justify-center"
+                >
+                  <Download className="w-5 h-5 mr-2" />
+                  <span className="pixel-font">下载完整版</span>
+                </button>
+              </div>
+              
+              <div className="bg-yellow-500 bg-opacity-20 border border-yellow-400 rounded-lg p-4 mt-6">
+                <div className="flex items-center justify-center text-yellow-300">
+                  <Info className="w-5 h-5 mr-2" />
+                  <span className="text-sm">目前可以下载桌面版体验完整游戏</span>
                 </div>
               </div>
             </div>
-          ) : (
-            <div className="w-full max-w-4xl">
-              {/* 这里将来嵌入pygbag生成的Web游戏 */}
-              <iframe
-                src="/game-web/index.html"
-                width="100%"
-                height="600"
-                className="border-0 rounded-lg"
-                title="FlapPy Bird Web Game"
-              />
-            </div>
-          )}
+          </div>
         </div>
       </div>
 
