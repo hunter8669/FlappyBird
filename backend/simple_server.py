@@ -159,11 +159,24 @@ class GameAPIHandler(BaseHTTPRequestHandler):
                     if os.path.exists(abs_path):
                         file_size = os.path.getsize(abs_path)
                         print(f"[下载] 文件大小: {file_size} bytes ({file_size/1024/1024:.1f} MB)")
-                        if file_size > 0:
+                        
+                        # 检测是否为Git LFS指针文件
+                        if file_size < 1000:  # LFS指针文件通常很小
+                            try:
+                                with open(abs_path, 'r', encoding='utf-8') as f:
+                                    content = f.read()
+                                    if 'git-lfs.github.com' in content:
+                                        print(f"[下载] 检测到Git LFS指针文件: {abs_path}")
+                                        print(f"[下载] LFS内容: {content}")
+                                        continue  # 跳过LFS文件
+                            except:
+                                pass
+                        
+                        if file_size > 1000000:  # 文件大于1MB才认为是真实文件
                             local_file_path = abs_path
                             break
                         else:
-                            print(f"[下载] 文件为空，继续寻找...")
+                            print(f"[下载] 文件太小，可能是LFS指针，继续寻找...")
                 
                 if local_file_path:
                     # 提供本地文件下载
@@ -208,24 +221,9 @@ class GameAPIHandler(BaseHTTPRequestHandler):
                         # 注意：此时已经发送了响应头，不能再发送JSON错误
                         return
                 
-                # 如果所有路径都找不到文件 - 返回JSON错误信息
-                print(f"[下载] 在以下路径都找不到EXE文件:")
-                for path in possible_paths:
-                    print(f"  - {os.path.abspath(path)}")
-                
-                self.send_response(404)
-                self.send_header('Content-Type', 'application/json; charset=utf-8')
-                self.send_header('Access-Control-Allow-Origin', '*')
-                self.end_headers()
-                error_response = {
-                    "error": "文件不存在", 
-                    "message": "游戏文件尚未准备就绪，请稍后重试或联系管理员",
-                    "filename": "FlapPyBird-v1.2.0-Windows-x64.zip",
-                    "searched_paths": [os.path.abspath(p) for p in possible_paths]
-                }
-                self.wfile.write(json.dumps(error_response, ensure_ascii=False).encode('utf-8'))
-                print(f"[下载] 已发送404错误响应")
-                return
+                # 如果找不到真实的EXE文件，自动切换到源码版本
+                print(f"[下载] 未找到有效的EXE文件（可能都是Git LFS指针），切换到源码版本")
+                download_type = 'source'  # 强制切换到源码版本
             
             elif download_type == 'source':
                 # 提供源码版本（现有逻辑）
@@ -392,12 +390,12 @@ if %errorlevel% neq 0 (
                     file_data = f.read()
                 
                 file_size = len(file_data)
-                print(f"[下载] 源码安装包已创建: FlapPyBird-Source-v1.2.0.zip ({file_size} bytes)")
+                print(f"[下载] 源码安装包已创建: FlapPyBird-Source-with-EXE-Builder-v1.2.0.zip ({file_size} bytes)")
                 
                 # 设置响应头
                 self.send_response(200)
                 self.send_header('Content-Type', 'application/zip')
-                self.send_header('Content-Disposition', 'attachment; filename="FlapPyBird-Source-v1.2.0.zip"')
+                self.send_header('Content-Disposition', 'attachment; filename="FlapPyBird-Source-with-EXE-Builder-v1.2.0.zip"')
                 self.send_header('Content-Length', str(file_size))
                 self.send_header('Access-Control-Allow-Origin', '*')
                 self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')

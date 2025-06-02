@@ -583,6 +583,16 @@
                             throw new Error('下载的文件为空，请联系管理员检查服务器文件');
                         }
                         
+                        // 检查是否为Git LFS指针文件（通常很小）
+                        if (blob.size < 1000) {
+                            const textContent = await blob.text();
+                            if (textContent.includes('git-lfs.github.com')) {
+                                throw new Error('检测到Git LFS问题：EXE文件过大被LFS管理，将自动提供源码版本。源码版本包含EXE构建工具，可本地构建EXE文件。');
+                            } else {
+                                throw new Error('下载的文件异常小，可能是服务器错误信息而非游戏文件');
+                            }
+                        }
+                        
                         // 验证文件是否为ZIP格式（如果大小足够）
                         if (blob.size >= 4) {
                             const firstBytes = await blob.slice(0, 4).arrayBuffer();
