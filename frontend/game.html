@@ -35,6 +35,7 @@
             height: 100vh; /* 占满视窗高度 */
             max-width: none; /* 移除最大宽度限制 */
             max-height: none; /* 移除最大高度限制 */
+            touch-action: manipulation; /* 优化触摸响应 */
         }
         
         canvas {
@@ -45,6 +46,8 @@
             max-width: none;
             max-height: none;
             object-fit: cover; /* 保持比例，裁剪多余部分 */
+            touch-action: manipulation; /* 优化触摸响应 */
+            cursor: pointer; /* 桌面端显示手型光标 */
         }
         
         .ui-overlay {
@@ -53,7 +56,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            pointer-events: none;
+            pointer-events: none; /* 确保不阻挡触摸事件 */
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -339,6 +342,7 @@
                 <h3>🎮 准备开始游戏？</h3>
                 <p>点击或按空格键控制小鸟飞行</p>
                 <p>避开管道，获得高分！</p>
+                <p id="touchDebug" style="color: #ffff00; font-size: 0.8rem;">触摸测试：点击屏幕任意地方</p>
                 <button class="start-button" onclick="startGame()">开始游戏</button>
                 <div class="controls">
                     <p>🖱️ 鼠标点击 | ⌨️ 空格键 | 📱 触摸屏幕</p>
@@ -476,18 +480,70 @@
         
         // 阻止手机端的默认触摸行为
         function preventDefaultTouch(e) {
+            // 只阻止文档级别的默认行为，不阻止游戏内的触摸
+            if (e.target === document.body || e.target === document.documentElement) {
+                e.preventDefault();
+            }
+        }
+        
+        // 触摸事件处理函数
+        function handleTouch(e) {
             e.preventDefault();
+            const touchCount = (window.touchTestCount || 0) + 1;
+            window.touchTestCount = touchCount;
+            
+            console.log('触摸事件触发:', e.type, '第', touchCount, '次');
+            
+            // 更新调试信息
+            const debugElement = document.getElementById('touchDebug');
+            if (debugElement) {
+                debugElement.textContent = `触摸成功！第 ${touchCount} 次触摸`;
+                debugElement.style.color = '#00ff00';
+            }
+            
+            // 只在touchstart时跳跃，避免重复触发
+            if (e.type === 'touchstart') {
+                jump();
+            }
         }
         
         // 页面加载完成后设置
         window.addEventListener('load', () => {
             setupResponsiveCanvas();
             
-            // 手机端阻止默认手势
+            const canvas = document.getElementById('gameCanvas');
+            
+            // 添加多种触摸事件监听器
+            canvas.addEventListener('touchstart', handleTouch, { passive: false });
+            canvas.addEventListener('touchend', handleTouch, { passive: false });
+            
+            // 也添加到整个游戏容器
+            const gameContainer = document.querySelector('.game-container');
+            gameContainer.addEventListener('touchstart', handleTouch, { passive: false });
+            gameContainer.addEventListener('touchend', handleTouch, { passive: false });
+            
+            // 手机端阻止页面级别的默认手势（但不影响游戏内触摸）
             if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
                 document.addEventListener('touchmove', preventDefaultTouch, { passive: false });
-                document.addEventListener('touchstart', preventDefaultTouch, { passive: false });
+                
+                // 阻止双击缩放
+                document.addEventListener('touchstart', function(e) {
+                    if (e.touches.length > 1) {
+                        e.preventDefault();
+                    }
+                }, { passive: false });
+                
+                let lastTouchEnd = 0;
+                document.addEventListener('touchend', function(e) {
+                    const now = Date.now();
+                    if (now - lastTouchEnd <= 300) {
+                        e.preventDefault();
+                    }
+                    lastTouchEnd = now;
+                }, { passive: false });
             }
+            
+            console.log('触摸事件监听器已设置');
         });
         
         // 游戏状态
@@ -806,16 +862,25 @@
         
         // 跳跃和射击
         function jump() {
+            console.log('跳跃函数被调用，当前游戏状态:', gameState);
+            
             if (gameState === 'playing') {
                 if (currentMode === 'boss') {
                     // Boss模式下：短按跳跃，长按射击
                     bird.velocity = bird.jump;
                     createParticles(bird.x, bird.y, bird.color, 3);
+                    console.log('Boss模式跳跃');
                 } else {
                     // 其他模式正常跳跃
                     bird.velocity = bird.jump;
                     createParticles(bird.x, bird.y, bird.color, 3);
+                    console.log('普通模式跳跃');
                 }
+            } else if (gameState === 'start') {
+                console.log('从开始界面启动游戏');
+                startGame();
+            } else {
+                console.log('游戏状态不允许跳跃:', gameState);
             }
         }
         
@@ -1357,12 +1422,6 @@
                     console.log('Boss已存在，无需生成');
                 }
             }
-        });
-        
-        // 触摸事件支持
-        canvas.addEventListener('touchstart', (e) => {
-            e.preventDefault();
-            jump();
         });
         
         // 模式切换
