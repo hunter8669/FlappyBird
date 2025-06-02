@@ -148,84 +148,44 @@ class GameAPIHandler(BaseHTTPRequestHandler):
                     
                     # 检查文件是否真的是EXE（不是Git LFS指针）
                     if file_size > 100 * 1024 * 1024:  # 大于100MB才认为是真实EXE
-                        # 创建包含EXE的ZIP包供下载
-                        import tempfile
-                        import zipfile
-                        
-                        print("[下载] 创建EXE下载包...")
-                        temp_zip = tempfile.NamedTemporaryFile(delete=False, suffix='.zip')
-                        temp_zip.close()
-                        
-                        with zipfile.ZipFile(temp_zip.name, 'w', zipfile.ZIP_DEFLATED) as zip_file:
-                            # 添加EXE文件
-                            zip_file.write(exe_file_path, "FlapPyBird.exe")
-                            
-                            # 添加启动脚本
-                            launcher_path = os.path.join(project_root, "scripts", "启动游戏.bat")
-                            if os.path.exists(launcher_path):
-                                zip_file.write(launcher_path, "启动游戏.bat")
-                            
-                            # 添加说明文件
-                            readme_content = '''FlapPy Bird 增强版 - EXE独立版
-========================================
-
-🎮 快速开始:
-1. 双击 "FlapPyBird.exe" 直接运行游戏
-2. 或双击 "启动游戏.bat" 启动
-
-🎯 游戏特色:
-- 四种游戏模式（经典、限时、反向、Boss战）
-- 丰富的道具系统和Boss战斗
-- 在线用户系统和排行榜
-- 流畅的60FPS游戏体验
-
-📋 系统要求:
-- Windows 7/10/11 (64位)
-- 无需安装Python或其他依赖
-
-🔧 故障排除:
-- 如果游戏无法启动，请检查Windows防火墙设置
-- 某些杀毒软件可能误报，请添加信任
-- 确保有足够的磁盘空间
-
-🌐 在线功能:
-- 注册账号保存游戏成就
-- 查看全球排行榜
-- 游戏内按 U 键访问用户界面
-
-版本: v1.2.0
-大小: 约243MB (包含完整游戏资源)
-更新: ''' + datetime.now().strftime('%Y-%m-%d') + '''
-
-享受游戏！🐦
-'''
-                            zip_file.writestr('README.txt', readme_content.encode('utf-8'))
-                        
-                        # 发送ZIP文件
-                        with open(temp_zip.name, 'rb') as f:
-                            file_data = f.read()
-                        
-                        file_size = len(file_data)
-                        print(f"[下载] EXE安装包已创建: FlapPyBird-EXE-v1.2.0.zip ({file_size/1024/1024:.1f} MB)")
+                        # 直接提供EXE文件下载
+                        print("[下载] 直接提供EXE文件...")
                         
                         # 设置响应头
                         self.send_response(200)
-                        self.send_header('Content-Type', 'application/zip')
-                        self.send_header('Content-Disposition', 'attachment; filename="FlapPyBird-EXE-v1.2.0.zip"')
+                        self.send_header('Content-Type', 'application/octet-stream')
+                        self.send_header('Content-Disposition', 'attachment; filename="FlapPyBird.exe"')
                         self.send_header('Content-Length', str(file_size))
                         self.send_header('Access-Control-Allow-Origin', '*')
                         self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
                         self.send_header('Access-Control-Allow-Headers', 'Content-Type')
                         self.end_headers()
                         
-                        # 发送文件内容
-                        self.wfile.write(file_data)
+                        print(f"[下载] 开始发送EXE文件...")
                         
-                        # 清理临时文件
-                        os.unlink(temp_zip.name)
+                        # 使用流式传输，避免内存不足
+                        chunk_size = 8192  # 8KB chunks
+                        bytes_sent = 0
                         
-                        print(f"[下载] EXE安装包已发送: {file_size/1024/1024:.1f} MB")
-                        return
+                        try:
+                            with open(exe_file_path, 'rb') as f:
+                                while True:
+                                    chunk = f.read(chunk_size)
+                                    if not chunk:
+                                        break
+                                    self.wfile.write(chunk)
+                                    bytes_sent += len(chunk)
+                                    
+                                    # 每发送10MB打印一次进度
+                                    if bytes_sent % (10 * 1024 * 1024) == 0:
+                                        print(f"[下载] 已发送: {bytes_sent/1024/1024:.1f} MB")
+                            
+                            print(f"[下载] EXE文件发送完成: {bytes_sent/1024/1024:.1f} MB")
+                            return
+                        except Exception as e:
+                            print(f"[错误] 文件传输失败: {e}")
+                            # 注意：此时已经发送了响应头，不能再发送JSON错误
+                            return
                     else:
                         print(f"[下载] EXE文件太小({file_size} bytes)，可能是Git LFS指针")
                 else:

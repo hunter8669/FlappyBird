@@ -479,24 +479,13 @@
                         </div>
                         <div class="info-row">
                             <span class="info-label">大小：</span>
-                            <span class="info-value">约243MB (EXE独立版)</span>
+                            <span class="info-value">约254MB (直接EXE)</span>
                         </div>
                     </div>
                     <button class="btn btn-primary btn-full">
-                        <span class="emoji">🎮</span>
-                        <span class="pixel-font">下载EXE独立版</span>
+                        <span class="emoji">⚡</span>
+                        <span class="pixel-font">直接下载EXE</span>
                     </button>
-                    <div style="text-align: center; margin-top: 0.5rem;">
-                        <a href="/api/downloads/desktop" download="FlapPyBird-Desktop-v1.2.0.zip" 
-                           style="color: #64b5f6; font-size: 0.8rem; text-decoration: none;">
-                            🔗 备用直接下载链接
-                        </a>
-                        <span style="color: #888; font-size: 0.7rem; margin-left: 0.5rem;">|</span>
-                        <a href="/download_debug.html" target="_blank"
-                           style="color: #ffa726; font-size: 0.8rem; text-decoration: none; margin-left: 0.5rem;">
-                            🔧 下载故障排除
-                        </a>
-                    </div>
                 </div>
                 <div class="download-card">
                     <div class="download-header">
@@ -546,7 +535,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             // 选择下载区域中的下载按钮
             const downloadBtn = document.querySelector('#download .btn-primary');
-            if (downloadBtn && downloadBtn.textContent.includes('下载EXE独立版')) {
+            if (downloadBtn && downloadBtn.textContent.includes('直接下载EXE')) {
                 // 保存按钮原始文本
                 let originalBtnText = downloadBtn.innerHTML;
                 
@@ -609,7 +598,7 @@
                         const url = window.URL.createObjectURL(blob);
                         const link = document.createElement('a');
                         link.href = url;
-                        link.download = 'FlapPyBird-Desktop-v1.2.0.zip';
+                        link.download = 'FlapPyBird.exe';
                         link.style.display = 'none';
                         
                         // 触发下载
@@ -641,9 +630,9 @@
                         // 显示下载成功提示
                         setTimeout(() => {
                             if (blob.size > 0) {
-                                alert('🎉 下载完成！\n\n文件名: FlapPyBird-EXE-v1.2.0.zip\n\n安装步骤:\n1. 解压ZIP文件\n2. 双击"FlapPyBird.exe"直接运行\n3. 或双击"启动游戏.bat"启动\n\n✨ 这是真正的EXE独立版，无需安装Python!\n\n如果遇到问题，请访问 /download_debug.html 进行调试');
+                                alert('🎉 下载完成！\n\n文件名: FlapPyBird.exe\n\n使用方法:\n直接双击"FlapPyBird.exe"即可游戏！\n\n✨ 无需解压，无需安装Python，即开即用！');
                             } else {
-                                alert('⚠️ 下载的文件可能有问题\n\n请访问 /download_debug.html 进行详细调试');
+                                alert('⚠️ 下载的文件可能有问题\n\n请联系技术支持');
                             }
                         }, 1000);
                         
