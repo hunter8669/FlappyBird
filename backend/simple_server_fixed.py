@@ -48,10 +48,8 @@ class GameAPIHandler(BaseHTTPRequestHandler):
         
         # API路由
         if path == '/':
-            # 直接重定向到游戏页面
-            self.send_response(302)
-            self.send_header('Location', '/game.html')
-            self.end_headers()
+            # 显示首页而不是直接跳转到游戏
+            self.serve_static_file('/index.html')
             
         elif path == '/health':
             self.send_response(200)
