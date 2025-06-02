@@ -368,7 +368,7 @@
                     <a href="#home" class="nav-link active">
                         <span>🏠</span><span>首页</span>
                     </a>
-                    <a href="#play" class="nav-link">
+                    <a href="/game.html" class="nav-link">
                         <span>🎮</span><span>在线游戏</span>
                     </a>
                     <a href="#download" class="nav-link">
@@ -397,7 +397,7 @@
             </p>
             
             <div class="hero-buttons">
-                <a href="#play" class="btn btn-primary">
+                <a href="/game.html" class="btn btn-primary">
                     <span class="emoji">▶️</span>
                     <span class="pixel-font">立即游戏</span>
                 </a>
@@ -462,6 +462,44 @@
             </div>
         </div>
 
+        <!-- Web版游戏 -->
+        <div id="play" class="section">
+            <h3 class="section-title pixel-font">🌐 Web版游戏</h3>
+            <div class="grid grid-2">
+                <div class="card">
+                    <div class="card-icon">🚀</div>
+                    <h4 class="pixel-font">无需下载</h4>
+                    <p>直接在浏览器中运行，无需安装任何软件，点击即玩</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">📱</div>
+                    <h4 class="pixel-font">多平台支持</h4>
+                    <p>支持电脑、手机、平板等所有设备，随时随地畅玩</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">⚡</div>
+                    <h4 class="pixel-font">快速启动</h4>
+                    <p>秒速加载，无需等待，让你立即投入到游戏的乐趣中</p>
+                </div>
+                <div class="card">
+                    <div class="card-icon">🎯</div>
+                    <h4 class="pixel-font">完整体验</h4>
+                    <p>包含所有四种游戏模式，体验与桌面版完全一致</p>
+                </div>
+            </div>
+            
+            <!-- Web版游戏链接 -->
+            <div style="text-align: center; margin-top: 2rem;">
+                <a href="/game.html" class="btn btn-primary" style="font-size: 1.3rem; padding: 1.2rem 2.5rem;">
+                    <span class="emoji">🎮</span>
+                    <span class="pixel-font">立即开始Web版游戏</span>
+                </a>
+                <p style="margin-top: 1rem; color: #fde047; font-size: 0.9rem;">
+                    ✨ 新功能！现在可以直接在浏览器中游戏了
+                </p>
+            </div>
+        </div>
+
         <!-- 下载区域 -->
         <div id="download" class="section">
             <h3 class="section-title pixel-font">📦 下载游戏</h3>
@@ -469,8 +507,8 @@
                 <div class="download-card">
                     <div class="download-header">
                         <div class="emoji">💻</div>
-                        <h2 class="pixel-font">桌面版</h2>
-                        <p>适用于Windows、macOS、Linux</p>
+                        <h2 class="pixel-font">EXE独立版</h2>
+                        <p>Windows一键启动，无需安装</p>
                     </div>
                     <div class="download-info">
                         <div class="info-row">
@@ -479,34 +517,70 @@
                         </div>
                         <div class="info-row">
                             <span class="info-label">大小：</span>
-                            <span class="info-value">约254MB (直接EXE)</span>
+                            <span class="info-value">约254MB</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">兼容性：</span>
+                            <span class="info-value" style="color: #fbbf24;">需要VC++运行时</span>
                         </div>
                     </div>
-                    <button class="btn btn-primary btn-full">
+                    <button class="btn btn-primary btn-full" onclick="downloadEXE()">
                         <span class="emoji">⚡</span>
-                        <span class="pixel-font">直接下载EXE</span>
+                        <span class="pixel-font">下载EXE版</span>
                     </button>
-                    <div style="text-align: center; margin-top: 1rem; padding: 0.8rem; background: rgba(255,255,255,0.1); border-radius: 8px; font-size: 0.85rem;">
-                        <div style="color: #ffd700; margin-bottom: 0.5rem;">📥 下载说明</div>
-                        <div style="color: #e8f4f8;">• 点击下载后浏览器将显示下载进度</div>
-                        <div style="color: #e8f4f8;">• 下载的是254MB的EXE独立文件</div>
-                        <div style="color: #e8f4f8;">• 下载完成后双击即可游戏</div>
+                    <div style="margin-top: 0.5rem;">
+                        <button class="btn btn-secondary btn-full" onclick="downloadCompatibilityGuide()" style="font-size: 0.8rem; padding: 0.5rem;">
+                            <span class="emoji">📋</span>
+                            <span class="pixel-font">兼容性说明</span>
+                        </button>
                     </div>
                 </div>
                 <div class="download-card">
                     <div class="download-header">
-                        <div class="emoji">🌐</div>
-                        <h2 class="pixel-font">Web版</h2>
-                        <p>直接在浏览器中游戏</p>
+                        <div class="emoji">🐍</div>
+                        <h2 class="pixel-font">源码版</h2>
+                        <p>100%兼容，推荐使用</p>
                     </div>
-                    <div style="text-align: center; margin-bottom: 1.5rem;">
-                        <div style="font-size: 2.5rem; margin-bottom: 0.5rem;">🚧</div>
-                        <p style="color: #d1d5db; font-size: 0.875rem;">正在开发中</p>
+                    <div class="download-info">
+                        <div class="info-row">
+                            <span class="info-label">版本：</span>
+                            <span class="info-value">1.2.0</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">大小：</span>
+                            <span class="info-value">约2MB</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label">兼容性：</span>
+                            <span class="info-value" style="color: #16a34a;">✅ 完美兼容</span>
+                        </div>
                     </div>
-                    <button disabled class="btn btn-disabled btn-full">
-                        <span class="emoji">🌐</span>
-                        <span class="pixel-font">即将推出</span>
+                    <button class="btn btn-primary btn-full" onclick="downloadSource()">
+                        <span class="emoji">📦</span>
+                        <span class="pixel-font">下载源码版</span>
                     </button>
+                    <div style="text-align: center; margin-top: 0.8rem; padding: 0.6rem; background: rgba(34, 197, 94, 0.2); border-radius: 8px; font-size: 0.8rem;">
+                        <div style="color: #16a34a; margin-bottom: 0.3rem;">✨ 推荐选择</div>
+                        <div style="color: #e8f4f8;">• 双击run_game.bat启动</div>
+                        <div style="color: #e8f4f8;">• 自动安装依赖</div>
+                        <div style="color: #e8f4f8;">• 无兼容性问题</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 下载说明 -->
+            <div style="margin-top: 2rem; padding: 1rem; background: rgba(255,255,255,0.1); border-radius: 8px;">
+                <h4 style="color: #ffd700; margin-bottom: 0.5rem;">💡 下载说明</h4>
+                <div style="font-size: 0.85rem; line-height: 1.5;">
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>EXE版：</strong> 即开即用，但可能遇到兼容性问题（需要Visual C++运行时库）
+                    </div>
+                    <div style="margin-bottom: 0.5rem;">
+                        <strong>源码版：</strong> 需要Python环境，但100%兼容且体积更小
+                    </div>
+                    <div style="color: #16a34a;">
+                        <strong>建议：</strong> 优先尝试EXE版，如遇问题请下载源码版
+                    </div>
                 </div>
             </div>
         </div>
@@ -539,73 +613,97 @@
 
         // 下载功能
         document.addEventListener('DOMContentLoaded', function() {
-            // 选择下载区域中的下载按钮
-            const downloadBtn = document.querySelector('#download .btn-primary');
-            if (downloadBtn && downloadBtn.textContent.includes('直接下载EXE')) {
-                // 保存按钮原始文本
-                let originalBtnText = downloadBtn.innerHTML;
-                
-                downloadBtn.addEventListener('click', async function(e) {
-                    e.preventDefault();
-                    
-                    try {
-                        console.log('开始下载游戏文件...');
-                        
-                        // 显示下载中状态
-                        downloadBtn.innerHTML = '<span>⏳</span><span class="pixel-font">准备下载...</span>';
-                        downloadBtn.disabled = true;
-                        
-                        // 方案1：使用浏览器原生下载（显示进度条）
-                        const downloadLink = document.createElement('a');
-                        downloadLink.href = '/api/downloads/desktop';
-                        downloadLink.download = 'FlapPyBird.exe';
-                        downloadLink.style.display = 'none';
-                        
-                        // 添加到页面并触发下载
-                        document.body.appendChild(downloadLink);
-                        downloadLink.click();
-                        document.body.removeChild(downloadLink);
-                        
-                        console.log('下载已启动，浏览器将显示下载进度...');
-                        
-                        // 显示成功提示
-                        downloadBtn.innerHTML = '<span>✅</span><span class="pixel-font">下载已开始</span>';
-                        
-                        setTimeout(() => {
-                            alert('🎉 下载已开始！\n\n文件名: FlapPyBird.exe (约254MB)\n\n✨ 浏览器下载栏将显示下载进度\n✨ 下载完成后双击EXE文件即可游戏！\n✨ 无需解压，无需安装Python！');
-                        }, 500);
-                        
-                        // 记录下载统计
-                        try {
-                            await fetch('/api/downloads/track', {
-                                method: 'POST',
-                                headers: {
-                                    'Content-Type': 'application/json',
-                                },
-                                body: JSON.stringify({
-                                    type: 'desktop',
-                                    version: '1.2.0',
-                                    timestamp: new Date().toISOString()
-                                })
-                            });
-                            console.log('下载统计已记录');
-                        } catch (trackError) {
-                            console.error('记录统计失败:', trackError);
-                        }
-                        
-                    } catch (error) {
-                        console.error('下载请求失败:', error);
-                        alert(`⚠️ 下载失败\n\n错误信息: ${error.message}\n\n请重试或联系技术支持`);
-                    } finally {
-                        // 3秒后恢复按钮状态
-                        setTimeout(() => {
-                            downloadBtn.innerHTML = originalBtnText;
-                            downloadBtn.disabled = false;
-                        }, 3000);
-                    }
-                });
-            }
+            // 移除旧的下载按钮监听器代码，使用新的函数式方法
         });
+
+        // EXE版本下载
+        function downloadEXE() {
+            console.log('开始下载EXE版本...');
+            
+            // 创建下载链接
+            const link = document.createElement('a');
+            link.href = '/api/downloads/desktop?type=exe';
+            link.download = 'FlapPyBird.exe';
+            link.style.display = 'none';
+            
+            // 触发下载
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            // 显示提示
+            setTimeout(() => {
+                alert('🎉 EXE下载已开始！\n\n文件名: FlapPyBird.exe (约254MB)\n\n✨ 浏览器下载栏将显示进度\n✨ 下载完成后双击即可游戏\n\n⚠️ 如遇"无法运行"错误，请:\n1. 安装Visual C++运行时库\n2. 或下载源码版本');
+            }, 500);
+            
+            // 记录下载统计
+            trackDownload('exe');
+        }
+
+        // 源码版本下载
+        function downloadSource() {
+            console.log('开始下载源码版本...');
+            
+            // 创建下载链接
+            const link = document.createElement('a');
+            link.href = '/api/downloads/desktop?type=source';
+            link.download = 'FlapPyBird-Source.zip';
+            link.style.display = 'none';
+            
+            // 触发下载
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            // 显示提示
+            setTimeout(() => {
+                alert('🎉 源码版下载已开始！\n\n文件名: FlapPyBird-Source.zip (约2MB)\n\n🚀 使用方法:\n1. 解压ZIP文件\n2. 双击 run_game.bat\n3. 如无Python，会提示安装\n\n✅ 100%兼容性保证！');
+            }, 500);
+            
+            // 记录下载统计
+            trackDownload('source');
+        }
+
+        // 兼容性说明下载
+        function downloadCompatibilityGuide() {
+            console.log('下载兼容性说明...');
+            
+            // 创建下载链接
+            const link = document.createElement('a');
+            link.href = '/api/downloads/desktop?type=compatibility';
+            link.download = '兼容性解决方案.txt';
+            link.style.display = 'none';
+            
+            // 触发下载
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            // 显示提示
+            setTimeout(() => {
+                alert('📋 兼容性说明已下载！\n\n包含详细的问题解决方案:\n• Visual C++运行时库安装\n• 兼容模式设置\n• 源码版使用方法\n\n请查看下载的文本文件。');
+            }, 500);
+        }
+
+        // 下载统计记录
+        async function trackDownload(type) {
+            try {
+                await fetch('/api/downloads/track', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        type: type,
+                        version: '1.2.0',
+                        timestamp: new Date().toISOString()
+                    })
+                });
+                console.log(`下载统计已记录: ${type}`);
+            } catch (error) {
+                console.error('记录统计失败:', error);
+            }
+        }
     </script>
     
     <!-- 用户状态检查脚本 -->

@@ -6,33 +6,73 @@
 
 ```
 FlapPyBird-master1/
-├── frontend/                 # 前端React项目
-│   ├── src/                 # 前端源码
-│   │   ├── components/      # React组件
-│   │   ├── pages/           # 页面组件
-│   │   └── assets/         # 前端资源
-│   └── package.json        # 前端依赖
-├── backend/                 # 后端FastAPI项目
-│   ├── app/                # API应用
-│   │   ├── api/           # API路由
-│   │   ├── models/        # 数据模型
+├── frontend/                 # 前端静态网站
+│   ├── index.html           # 主页面
+│   ├── game.html           # Web版游戏
+│   └── assets/             # 前端资源
+├── backend/                 # 后端Python项目
+│   ├── simple_server.py    # 简化版服务器
+│   ├── user_manager.py     # 用户管理
 │   └── requirements.txt    # Python依赖
-├── game-web/               # Web版游戏 (开发中)
 ├── game-desktop/           # 桌面版游戏
 │   ├── src/               # 游戏源码
 │   ├── assets/            # 游戏资源
 │   └── main.py            # 游戏入口
-└── docs/                   # 项目文档
+├── scripts/               # 构建脚本
+│   ├── 兼容性解决方案.txt  # EXE兼容性说明
+│   └── build_compatible_exe.py
+├── 启动Web版游戏.bat      # Web版游戏启动器
+├── run_game.bat           # 桌面版游戏启动器
+└── Web版游戏说明.md       # Web版详细说明
+```
+
+## 🚀 快速开始
+
+### 🌐 Web版游戏（推荐）
+
+**最简单的方式 - 双击启动：**
+1. 双击 `启动Web版游戏.bat`
+2. 等待服务器启动（约3秒）
+3. 浏览器自动访问 http://localhost:8000
+4. 点击"立即游戏"或"Web版游戏"开始
+
+**手动启动：**
+```bash
+cd backend
+python simple_server.py
+```
+然后访问 http://localhost:8000/game.html
+
+### 💻 桌面版游戏
+
+**最简单的方式：**
+1. 双击 `run_game.bat`
+2. 自动检查Python环境
+3. 自动安装pygame依赖
+4. 启动游戏
+
+**手动启动：**
+```bash
+cd game-desktop
+python main.py
 ```
 
 ## 🎮 游戏特色
 
+### 🌐 Web版本特点
+- ✅ **无需下载**：直接在浏览器中运行
+- ✅ **跨平台支持**：电脑、手机、平板全支持  
+- ✅ **即时加载**：秒速启动，无需等待
+- ✅ **完整体验**：包含桌面版所有功能
+- ✅ **本地存储**：自动保存最高分记录
+- ✅ **用户系统**：支持注册登录和分数同步
+
 ### 四种游戏模式
 
-1. **经典模式**：原版Flappy Bird的无尽挑战，躲避管道获得高分
-2. **限时挑战**：在90秒内获得尽可能高的分数，考验你的技巧
-3. **反向模式**：重力反转，控制方式相反，带来全新体验
-4. **Boss战斗模式**：挑战四种不同的Boss，使用武器系统击败它们
+1. **经典模式** ⭐：原版Flappy Bird的无尽挑战，躲避管道获得高分
+2. **限时挑战** ⏰：在90秒内获得尽可能高的分数，考验你的技巧
+3. **反向模式** ⚡：重力反转，控制方式相反，带来全新体验
+4. **Boss战斗模式** 🛡️：挑战四种不同的Boss，使用武器系统击败它们
 
 ### Boss战斗系统
 
@@ -85,61 +125,6 @@ FlapPyBird-master1/
 2. **无敌道具**（金色，标识I）：让鸟儿暂时无视碰撞
 3. **慢动作道具**（蓝色，标识T）：减缓鸟儿的飞行速度
 4. **缩小道具**（紫色，标识-）：缩小鸟儿的体积
-
-## 🚀 快速开始
-
-### 桌面版游戏
-
-1. 确保安装了Python 3.9或更高版本
-2. 安装依赖：`pip install pygame`
-3. 运行游戏：
-   ```bash
-   cd game-desktop
-   python main.py
-   ```
-
-### 前端开发（需要Node.js）
-
-1. 安装依赖：
-   ```bash
-   cd frontend
-   npm install
-   ```
-2. 启动开发服务器：
-   ```bash
-   npm run dev
-   ```
-3. 在浏览器中访问：http://localhost:3000
-
-### 后端开发
-
-1. 安装依赖：
-   ```bash
-   cd backend
-   pip install -r requirements.txt
-   ```
-2. 启动API服务器：
-   ```bash
-   python main.py
-   ```
-3. API文档访问：http://localhost:8000/docs
-
-## 🌐 Web版本（开发中）
-
-Web版本正在使用pygbag技术将pygame游戏转换为浏览器兼容版本：
-
-- ✅ 完整的四种游戏模式
-- ✅ 道具系统和Boss战斗
-- ✅ 原生的游戏体验
-- ⏳ 浏览器兼容性优化
-- ⏳ 触控设备支持
-
-## 🎯 控制方式
-
-- **飞行**：使用空格键或上箭头控制鸟儿飞行
-- **射击**（仅Boss模式）：空格键同时也是射击键
-- **切换武器**（仅Boss模式）：Q和E键，或数字键1-4
-- **选择模式**：在主菜单使用上下箭头选择模式，空格确认
 
 ## 🛠️ 技术栈
 
