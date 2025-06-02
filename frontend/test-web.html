@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🐦 Web版游戏测试</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+            padding: 2rem;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        .test-container {
+            background: rgba(255,255,255,0.1);
+            padding: 2rem;
+            border-radius: 10px;
+            max-width: 600px;
+            width: 100%;
+        }
+        .btn {
+            display: inline-block;
+            padding: 1rem 2rem;
+            background: #ff6b35;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            margin: 1rem;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+        .btn:hover {
+            transform: scale(1.05);
+        }
+        .status {
+            margin: 1rem 0;
+            padding: 1rem;
+            border-radius: 8px;
+        }
+        .success { background: rgba(0,255,0,0.2); }
+        .error { background: rgba(255,0,0,0.2); }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🐦 FlapPy Bird Web版测试</h1>
+        <p>如果你能看到这个页面，说明服务器正常工作！</p>
+        
+        <div id="serverTest" class="status">
+            📡 正在测试服务器连接...
+        </div>
+        
+        <div>
+            <a href="/game.html" class="btn">🎮 进入游戏</a>
+            <a href="/index.html" class="btn">🏠 返回首页</a>
+            <a href="/health" class="btn" target="_blank">💓 健康检查</a>
+        </div>
+        
+        <div style="margin-top: 2rem; font-size: 0.9rem; color: #ddd;">
+            <p>时间: <span id="currentTime"></span></p>
+            <p>URL: <span id="currentUrl"></span></p>
+        </div>
+    </div>
+    
+    <script>
+        // 显示当前时间和URL
+        document.getElementById('currentTime').textContent = new Date().toLocaleString();
+        document.getElementById('currentUrl').textContent = window.location.href;
+        
+        // 测试服务器健康检查
+        fetch('/health')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('serverTest').innerHTML = 
+                    `<div class="success">✅ 服务器连接正常<br>状态: ${data.status}<br>时间: ${data.timestamp}</div>`;
+            })
+            .catch(err => {
+                document.getElementById('serverTest').innerHTML = 
+                    `<div class="error">❌ 服务器连接失败<br>错误: ${err.message}</div>`;
+            });
+    </script>
+</body>
+</html> 

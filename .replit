@@ -1,5 +1,5 @@
 language = "python3"
-run = "cd backend && pip install -r requirements_cloud.txt && python simple_server_cloud.py"
+run = "python main.py"
 
 [packager]
 language = "python3"
@@ -11,6 +11,9 @@ packageSearch = true
 guessImports = true
 
 modules = ["python-3.11"]
+
+[deployment]
+run = ["sh", "-c", "python main.py"]
 
 [nix]
 channel = "stable-22_11"

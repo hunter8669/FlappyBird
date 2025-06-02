@@ -67,7 +67,6 @@ class GameAPIHandler(BaseHTTPRequestHandler):
                 print(f"[下载] 用户代理: {self.headers.get('User-Agent', 'Unknown')}")
                 
                 # 解析查询参数
-                from urllib.parse import urlparse, parse_qs
                 parsed_url = urlparse(self.path)
                 query_params = parse_qs(parsed_url.query)
                 download_type = query_params.get('type', ['exe'])[0]
@@ -1435,15 +1434,37 @@ class GameAPIHandler(BaseHTTPRequestHandler):
             print(f"[下载] 兼容性说明错误: {e}")
             self.send_error(500, f"获取兼容性说明失败: {str(e)}")
 
-def run_server(port=8000):
-    """启动服务器"""
-    server_address = ('', port)
+def run_server(port=None):
+    """启动服务器 - 适配Replit环境"""
+    # 自动检测运行环境和端口
+    if port is None:
+        port = int(os.environ.get('PORT', 8000))  # Replit使用PORT环境变量
+    
+    # Replit环境需要绑定到0.0.0.0，本地开发可以使用localhost
+    if os.environ.get('REPL_ID'):  # Replit环境
+        host = '0.0.0.0'
+        server_url = f"https://{os.environ.get('REPL_SLUG', 'app')}.{os.environ.get('REPL_OWNER', 'user')}.repl.co"
+        print(f"🌐 检测到Replit环境")
+        print(f"🚀 FlapPy Bird Web版服务器启动成功!")
+        print(f"📍 公网访问地址: {server_url}")
+        print(f"🎮 Web版游戏: {server_url}/game.html")
+        print(f"📋 管理后台: {server_url}/admin")
+        print(f"❤️  健康检查: {server_url}/health")
+    else:  # 本地环境
+        host = ''
+        print(f"💻 本地开发环境")
+        print(f"🚀 FlapPy Bird API服务器启动成功!")
+        print(f"📍 本地访问地址: http://localhost:{port}")
+        print(f"🎮 Web版游戏: http://localhost:{port}/game.html")
+        print(f"📋 管理后台: http://localhost:{port}/admin")
+        print(f"❤️  健康检查: http://localhost:{port}/health")
+    
+    server_address = (host, port)
     httpd = HTTPServer(server_address, GameAPIHandler)
-    print(f"🚀 FlapPy Bird API服务器启动成功!")
-    print(f"📍 服务地址: http://localhost:{port}")
-    print(f"📋 API文档: http://localhost:{port}")
-    print(f"❤️  健康检查: http://localhost:{port}/health")
+    
+    print(f"🔧 服务器绑定: {host}:{port}")
     print("按 Ctrl+C 停止服务器...")
+    print("=" * 50)
     
     try:
         httpd.serve_forever()

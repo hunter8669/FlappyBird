@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache">
+    <title>FlapPy Bird 测试页面</title>
+    <style>
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-align: center;
+            padding: 2rem;
+            min-height: 100vh;
+        }
+        .test-card {
+            background: rgba(255,255,255,0.1);
+            padding: 2rem;
+            border-radius: 10px;
+            margin: 1rem auto;
+            max-width: 600px;
+        }
+        .btn {
+            display: inline-block;
+            padding: 1rem 2rem;
+            background: #ff6b35;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            margin: 1rem;
+            font-weight: bold;
+            transition: transform 0.2s;
+        }
+        .btn:hover {
+            transform: scale(1.05);
+        }
+        .success { background: rgba(0,255,0,0.2); }
+        .error { background: rgba(255,0,0,0.2); }
+    </style>
+</head>
+<body>
+    <div class="test-card">
+        <h1>🐦 FlapPy Bird 功能测试</h1>
+        <p id="timestamp">测试时间: <script>document.write(new Date().toLocaleString())</script></p>
+        
+        <div class="test-card success">
+            <h3>✅ 服务器状态检查</h3>
+            <p id="serverStatus">检查中...</p>
+        </div>
+        
+        <div class="test-card">
+            <h3>🎮 游戏页面测试</h3>
+            <a href="/game.html" class="btn" target="_blank">🎯 测试Web版游戏</a>
+            <a href="/" class="btn">🏠 返回首页</a>
+            <a href="/admin" class="btn">🔧 管理后台</a>
+        </div>
+        
+        <div class="test-card">
+            <h3>📝 问题排除</h3>
+            <p>如果看到"正在开发中"，请：</p>
+            <ol style="text-align: left; max-width: 400px; margin: 0 auto;">
+                <li>按 Ctrl+F5 强制刷新页面</li>
+                <li>清除浏览器缓存</li>
+                <li>尝试无痕浏览模式</li>
+                <li>直接访问 /game.html</li>
+            </ol>
+        </div>
+    </div>
+    
+    <script>
+        // 检查服务器状态
+        fetch('/health')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('serverStatus').innerHTML = '✅ 服务器正常运行<br>状态: ' + data.status + '<br>时间: ' + data.timestamp;
+            })
+            .catch(err => {
+                document.getElementById('serverStatus').innerHTML = '❌ 服务器连接失败: ' + err.message;
+            });
+    </script>
+</body>
+</html> 
