@@ -1453,11 +1453,11 @@ def run_server(port=None):
     else:  # 本地环境
         host = ''
         print(f"💻 本地开发环境")
-    print(f"🚀 FlapPy Bird API服务器启动成功!")
+        print(f"🚀 FlapPy Bird API服务器启动成功!")
         print(f"📍 本地访问地址: http://localhost:{port}")
         print(f"🎮 Web版游戏: http://localhost:{port}/game.html")
         print(f"📋 管理后台: http://localhost:{port}/admin")
-    print(f"❤️  健康检查: http://localhost:{port}/health")
+        print(f"❤️  健康检查: http://localhost:{port}/health")
     
     server_address = (host, port)
     httpd = HTTPServer(server_address, GameAPIHandler)
