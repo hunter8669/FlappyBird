@@ -93,6 +93,43 @@
                 log(`Blob大小: ${blob.size} bytes (${(blob.size/1024/1024).toFixed(1)} MB)`);
                 log(`Blob类型: ${blob.type}`);
                 
+                // 检查文件内容的前100字节
+                if (blob.size > 0) {
+                    const firstBytes = await blob.slice(0, Math.min(blob.size, 100)).arrayBuffer();
+                    const uint8Array = new Uint8Array(firstBytes);
+                    const hexString = Array.from(uint8Array)
+                        .map(b => b.toString(16).padStart(2, '0'))
+                        .join(' ');
+                    log(`文件头部(hex): ${hexString}`);
+                    
+                    // 尝试读取为文本（如果是错误信息）
+                    try {
+                        const textContent = new TextDecoder().decode(firstBytes);
+                        log(`文件内容(文本): ${textContent}`);
+                    } catch (e) {
+                        log('文件内容不是文本格式');
+                    }
+                    
+                    // 检查ZIP文件签名
+                    if (uint8Array[0] === 0x50 && uint8Array[1] === 0x4B) {
+                        log('✅ 检测到有效的ZIP文件签名');
+                    } else {
+                        log('❌ 未检测到ZIP文件签名 - 这可能是错误信息而不是ZIP文件！');
+                        
+                        // 如果文件很小且不是ZIP，很可能是JSON错误信息
+                        if (blob.size < 1000) {
+                            log('⚠️ 文件太小，可能是服务器错误信息');
+                            try {
+                                const errorText = await blob.text();
+                                log(`服务器错误内容: ${errorText}`);
+                                return;
+                            } catch (e) {
+                                log('无法读取错误内容');
+                            }
+                        }
+                    }
+                }
+                
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;

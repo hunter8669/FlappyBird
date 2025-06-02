@@ -121,6 +121,10 @@ class GameAPIHandler(BaseHTTPRequestHandler):
     def handle_download(self):
         """处理游戏下载请求"""
         try:
+            print(f"[下载] 收到下载请求: {self.path}")
+            print(f"[下载] 请求方法: {self.command}")
+            print(f"[下载] 用户代理: {self.headers.get('User-Agent', 'Unknown')}")
+            
             # GitHub Releases 下载配置
             GITHUB_USER = "hunter8669"  # 您的实际GitHub用户名
             GITHUB_REPO = "FlappyBird"    # 您的仓库名
@@ -129,12 +133,15 @@ class GameAPIHandler(BaseHTTPRequestHandler):
             # 检查用户是否要求源码版本
             query_params = parse_qs(urlparse(self.path).query)
             download_type = query_params.get('type', ['exe'])[0]
+            print(f"[下载] 请求类型: {download_type}")
             
             if download_type == 'exe':
                 # 本地文件下载 - 改进路径检测
                 import os
                 current_dir = os.path.dirname(os.path.abspath(__file__))
                 project_root = os.path.dirname(current_dir)
+                print(f"[下载] 当前目录: {current_dir}")
+                print(f"[下载] 项目根目录: {project_root}")
                 
                 # 尝试多个可能的文件路径
                 possible_paths = [
@@ -166,12 +173,16 @@ class GameAPIHandler(BaseHTTPRequestHandler):
                     file_size = os.path.getsize(local_file_path)
                     print(f"[下载] 确认文件大小: {file_size/1024/1024:.1f} MB")
                     
+                    # 确保发送正确的响应头
                     self.send_response(200)
                     self.send_header('Content-Type', 'application/zip')
                     self.send_header('Content-Disposition', 'attachment; filename="FlapPyBird-v1.2.0-Windows-x64.zip"')
                     self.send_header('Content-Length', str(file_size))
                     self.send_header('Access-Control-Allow-Origin', '*')
+                    self.send_header('Cache-Control', 'no-cache')
                     self.end_headers()
+                    
+                    print(f"[下载] 开始发送文件...")
                     
                     # 使用流式传输，避免内存不足
                     chunk_size = 8192  # 8KB chunks
@@ -185,20 +196,19 @@ class GameAPIHandler(BaseHTTPRequestHandler):
                                     break
                                 self.wfile.write(chunk)
                                 bytes_sent += len(chunk)
+                                
+                                # 每发送10MB打印一次进度
+                                if bytes_sent % (10 * 1024 * 1024) == 0:
+                                    print(f"[下载] 已发送: {bytes_sent/1024/1024:.1f} MB")
                         
-                        print(f"[下载] 本地EXE文件已发送: {bytes_sent/1024/1024:.1f} MB")
+                        print(f"[下载] 文件发送完成: {bytes_sent/1024/1024:.1f} MB")
                         return
                     except Exception as e:
                         print(f"[错误] 文件传输失败: {e}")
-                        self.send_response(500)
-                        self.send_header('Content-Type', 'application/json; charset=utf-8')
-                        self.send_header('Access-Control-Allow-Origin', '*')
-                        self.end_headers()
-                        error_response = {"error": "文件传输失败", "message": str(e)}
-                        self.wfile.write(json.dumps(error_response, ensure_ascii=False).encode('utf-8'))
+                        # 注意：此时已经发送了响应头，不能再发送JSON错误
                         return
                 
-                # 如果所有路径都找不到文件
+                # 如果所有路径都找不到文件 - 返回JSON错误信息
                 print(f"[下载] 在以下路径都找不到EXE文件:")
                 for path in possible_paths:
                     print(f"  - {os.path.abspath(path)}")
@@ -214,6 +224,7 @@ class GameAPIHandler(BaseHTTPRequestHandler):
                     "searched_paths": [os.path.abspath(p) for p in possible_paths]
                 }
                 self.wfile.write(json.dumps(error_response, ensure_ascii=False).encode('utf-8'))
+                print(f"[下载] 已发送404错误响应")
                 return
             
             elif download_type == 'source':
