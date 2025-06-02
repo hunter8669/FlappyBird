@@ -547,6 +547,9 @@
             // 选择下载区域中的下载按钮
             const downloadBtn = document.querySelector('#download .btn-primary');
             if (downloadBtn && downloadBtn.textContent.includes('下载桌面版')) {
+                // 保存按钮原始文本
+                let originalBtnText = downloadBtn.innerHTML;
+                
                 downloadBtn.addEventListener('click', async function(e) {
                     e.preventDefault();
                     
@@ -554,14 +557,15 @@
                         console.log('开始下载游戏文件...');
                         
                         // 显示下载中状态
-                        const originalText = this.innerHTML;
-                        this.innerHTML = '<span>⏳</span><span class="pixel-font">下载中...</span>';
-                        this.disabled = true;
+                        downloadBtn.innerHTML = '<span>⏳</span><span class="pixel-font">下载中...</span>';
+                        downloadBtn.disabled = true;
                         
                         // 使用fetch+blob下载，确保文件完整性
                         const response = await fetch('/api/downloads/desktop');
                         
                         if (!response.ok) {
+                            const errorText = await response.text();
+                            console.error('服务器响应:', errorText);
                             throw new Error(`下载失败: ${response.status} ${response.statusText}`);
                         }
                         
@@ -574,11 +578,18 @@
                         const blob = await response.blob();
                         console.log(`下载完成: ${blob.size} bytes (${(blob.size/1024/1024).toFixed(1)} MB)`);
                         
-                        // 验证文件是否为ZIP格式
-                        const firstBytes = await blob.slice(0, 4).arrayBuffer();
-                        const uint8Array = new Uint8Array(firstBytes);
-                        if (uint8Array[0] !== 0x50 || uint8Array[1] !== 0x4B) {
-                            throw new Error('下载的文件格式不正确，请重试');
+                        // 检查文件大小
+                        if (blob.size === 0) {
+                            throw new Error('下载的文件为空，请联系管理员检查服务器文件');
+                        }
+                        
+                        // 验证文件是否为ZIP格式（如果大小足够）
+                        if (blob.size >= 4) {
+                            const firstBytes = await blob.slice(0, 4).arrayBuffer();
+                            const uint8Array = new Uint8Array(firstBytes);
+                            if (uint8Array[0] !== 0x50 || uint8Array[1] !== 0x4B) {
+                                console.warn('文件可能不是ZIP格式，但仍尝试下载');
+                            }
                         }
                         
                         // 创建下载链接
@@ -616,7 +627,11 @@
                         
                         // 显示下载成功提示
                         setTimeout(() => {
-                            alert('🎉 下载完成！\n\n文件名: FlapPyBird-Desktop-v1.2.0.zip\n\n安装步骤:\n1. 解压ZIP文件\n2. 运行"FlapPyBird.exe"\n3. 或双击"启动游戏.bat"\n\n如果遇到问题，请访问 /download_debug.html 进行调试');
+                            if (blob.size > 0) {
+                                alert('🎉 下载完成！\n\n文件名: FlapPyBird-Desktop-v1.2.0.zip\n\n安装步骤:\n1. 解压ZIP文件\n2. 运行"FlapPyBird.exe"\n3. 或双击"启动游戏.bat"\n\n如果遇到问题，请访问 /download_debug.html 进行调试');
+                            } else {
+                                alert('⚠️ 下载的文件可能有问题\n\n请访问 /download_debug.html 进行详细调试');
+                            }
                         }, 1000);
                         
                     } catch (error) {
@@ -624,8 +639,8 @@
                         alert(`⚠️ 下载失败\n\n错误信息: ${error.message}\n\n解决方案:\n1. 请访问 /download_debug.html 进行详细调试\n2. 或联系技术支持\n3. 临时方案: 直接运行源码版 game-desktop/main.py`);
                     } finally {
                         // 恢复按钮状态
-                        this.innerHTML = originalText;
-                        this.disabled = false;
+                        downloadBtn.innerHTML = originalBtnText;
+                        downloadBtn.disabled = false;
                     }
                 });
             }

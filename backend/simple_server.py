@@ -131,22 +131,40 @@ class GameAPIHandler(BaseHTTPRequestHandler):
             download_type = query_params.get('type', ['exe'])[0]
             
             if download_type == 'exe':
-                # 本地文件下载 - 修复路径问题
+                # 本地文件下载 - 改进路径检测
                 import os
                 current_dir = os.path.dirname(os.path.abspath(__file__))
                 project_root = os.path.dirname(current_dir)
-                local_file_path = os.path.join(project_root, "scripts", "FlapPyBird-v1.2.0-Windows-x64.zip")
                 
-                print(f"[下载] 检查文件路径: {local_file_path}")
-                print(f"[下载] 文件是否存在: {os.path.exists(local_file_path)}")
+                # 尝试多个可能的文件路径
+                possible_paths = [
+                    os.path.join(project_root, "scripts", "FlapPyBird-v1.2.0-Windows-x64.zip"),
+                    os.path.join(current_dir, "..", "scripts", "FlapPyBird-v1.2.0-Windows-x64.zip"),
+                    os.path.join("scripts", "FlapPyBird-v1.2.0-Windows-x64.zip"),
+                    "FlapPyBird-v1.2.0-Windows-x64.zip"
+                ]
                 
-                if os.path.exists(local_file_path):
+                local_file_path = None
+                for path in possible_paths:
+                    abs_path = os.path.abspath(path)
+                    print(f"[下载] 尝试路径: {abs_path}")
+                    print(f"[下载] 路径存在: {os.path.exists(abs_path)}")
+                    if os.path.exists(abs_path):
+                        file_size = os.path.getsize(abs_path)
+                        print(f"[下载] 文件大小: {file_size} bytes ({file_size/1024/1024:.1f} MB)")
+                        if file_size > 0:
+                            local_file_path = abs_path
+                            break
+                        else:
+                            print(f"[下载] 文件为空，继续寻找...")
+                
+                if local_file_path:
                     # 提供本地文件下载
-                    print(f"[下载] 提供本地EXE文件下载")
+                    print(f"[下载] 找到有效文件: {local_file_path}")
                     
                     # 获取文件大小
                     file_size = os.path.getsize(local_file_path)
-                    print(f"[下载] 文件大小: {file_size/1024/1024:.1f} MB")
+                    print(f"[下载] 确认文件大小: {file_size/1024/1024:.1f} MB")
                     
                     self.send_response(200)
                     self.send_header('Content-Type', 'application/zip')
@@ -180,8 +198,11 @@ class GameAPIHandler(BaseHTTPRequestHandler):
                         self.wfile.write(json.dumps(error_response, ensure_ascii=False).encode('utf-8'))
                         return
                 
-                # 如果本地文件不存在
-                print(f"[下载] 本地EXE文件不存在: {local_file_path}")
+                # 如果所有路径都找不到文件
+                print(f"[下载] 在以下路径都找不到EXE文件:")
+                for path in possible_paths:
+                    print(f"  - {os.path.abspath(path)}")
+                
                 self.send_response(404)
                 self.send_header('Content-Type', 'application/json; charset=utf-8')
                 self.send_header('Access-Control-Allow-Origin', '*')
@@ -190,7 +211,7 @@ class GameAPIHandler(BaseHTTPRequestHandler):
                     "error": "文件不存在", 
                     "message": "游戏文件尚未准备就绪，请稍后重试或联系管理员",
                     "filename": "FlapPyBird-v1.2.0-Windows-x64.zip",
-                    "search_path": local_file_path
+                    "searched_paths": [os.path.abspath(p) for p in possible_paths]
                 }
                 self.wfile.write(json.dumps(error_response, ensure_ascii=False).encode('utf-8'))
                 return
