@@ -381,24 +381,28 @@
             let canvasWidth, canvasHeight;
             
             if (isMobile) {
-                // 手机端：占满整个屏幕
+                // 手机端：使用标准分辨率，CSS缩放显示
                 canvasWidth = window.innerWidth;
                 canvasHeight = window.innerHeight;
                 
-                // 设置Canvas内部分辨率（适当降低以提高性能）
-                const pixelRatio = Math.min(window.devicePixelRatio || 1, 2); // 限制最大像素比为2
-                canvas.width = Math.floor(canvasWidth * pixelRatio);
-                canvas.height = Math.floor(canvasHeight * pixelRatio);
+                // 计算合适的内部分辨率（基于标准比例）
+                const aspectRatio = canvasWidth / canvasHeight;
                 
-                // 缩放上下文以匹配设备像素比
-                const ctx = canvas.getContext('2d');
-                ctx.scale(pixelRatio, pixelRatio);
+                if (aspectRatio > 4/3) {
+                    // 横屏：基于高度计算
+                    canvas.height = 600;
+                    canvas.width = Math.floor(600 * aspectRatio);
+                } else {
+                    // 竖屏：基于宽度计算
+                    canvas.width = 800;
+                    canvas.height = Math.floor(800 / aspectRatio);
+                }
                 
-                // 设置CSS显示尺寸
+                // 设置CSS显示尺寸占满屏幕
                 canvas.style.width = canvasWidth + 'px';
                 canvas.style.height = canvasHeight + 'px';
                 
-                console.log(`手机模式: Canvas内部尺寸: ${canvas.width}x${canvas.height}, 显示尺寸: ${canvasWidth}x${canvasHeight}`);
+                console.log(`手机模式: Canvas内部分辨率: ${canvas.width}x${canvas.height}, 显示尺寸: ${canvasWidth}x${canvasHeight}, 宽高比: ${aspectRatio.toFixed(2)}`);
             } else {
                 // 桌面端：保持原有比例
                 const maxWidth = Math.min(window.innerWidth - 20, 900);
@@ -431,36 +435,25 @@
             const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || 
                             window.innerWidth <= 768;
             
+            // 统一使用基于Canvas实际尺寸的缩放
+            const scaleX = canvas.width / 800;
+            const scaleY = canvas.height / 600;
+            const scale = Math.min(scaleX, scaleY);
+            
+            // 更新小鸟
+            bird.x = 100 * scaleX;
+            bird.y = canvas.height / 2;
+            bird.width = 30 * scale;
+            bird.height = 25 * scale;
+            
+            // 调整游戏速度（手机端稍慢一些）
             if (isMobile) {
-                // 手机端：基于实际屏幕尺寸缩放
-                const baseWidth = 800;
-                const baseHeight = 600;
-                const scaleX = canvas.width / baseWidth;
-                const scaleY = canvas.height / baseHeight;
-                const scale = Math.min(scaleX, scaleY);
-                
-                // 更新小鸟
-                bird.x = 100 * scale;
-                bird.y = canvas.height / 2;
-                bird.width = 30 * scale;
-                bird.height = 25 * scale;
-                
-                // 调整游戏速度
-                gameSpeed = Math.max(1, 2 * scale);
-                
-                console.log(`手机缩放比例: ${scale.toFixed(2)}, 游戏速度: ${gameSpeed.toFixed(2)}`);
+                gameSpeed = Math.max(0.8, 1.5 * scale);
             } else {
-                // 桌面端：基于标准800x600缩放
-                const scaleX = canvas.width / 800;
-                const scaleY = canvas.height / 600;
-                
-                bird.x = 100 * scaleX;
-                bird.y = canvas.height / 2;
-                bird.width = 30 * Math.min(scaleX, scaleY);
-                bird.height = 25 * Math.min(scaleX, scaleY);
-                
-                gameSpeed = Math.max(0.5, 2 * Math.min(scaleX, scaleY));
+                gameSpeed = Math.max(0.5, 2 * scale);
             }
+            
+            console.log(`缩放比例: X=${scaleX.toFixed(2)}, Y=${scaleY.toFixed(2)}, 统一=${scale.toFixed(2)}, 游戏速度: ${gameSpeed.toFixed(2)}`);
         }
         
         // 屏幕方向变化监听
@@ -788,21 +781,48 @@
         function createPipe() {
             const scaleX = canvas.width / 800;  // 缩放比例
             const scaleY = canvas.height / 600;
+            const scale = Math.min(scaleX, scaleY);
             
-            const gap = 180 * Math.min(scaleX, scaleY);               // 缩放后的间隙
-            const minHeight = 80 * scaleY;          // 缩放后的最小高度
-            const maxHeight = canvas.height - gap - minHeight;
-            const height = Math.random() * (maxHeight - minHeight) + minHeight;
+            // 固定间隙大小，不要缩放得太小
+            const gap = Math.max(180, 180 * scale);  // 确保最小180px间隙
+            const groundHeight = 50 * scaleY;        // 地面高度
+            const minHeight = 50 * scaleY;           // 最小管道高度
+            
+            // 可用高度（去掉地面和最小管道高度）
+            const availableHeight = canvas.height - groundHeight - gap - minHeight * 2;
+            
+            // 如果可用高度不够，使用备用方案
+            if (availableHeight <= 0) {
+                console.warn('屏幕太小，使用备用管道生成方案');
+                const simpleGap = canvas.height * 0.3; // 使用屏幕高度的30%作为间隙
+                const topHeight = canvas.height * 0.2;  // 上管道占20%
+                
+                pipes.push({
+                    x: canvas.width,
+                    topHeight: topHeight,
+                    bottomY: topHeight + simpleGap,
+                    bottomHeight: canvas.height - topHeight - simpleGap,
+                    width: 80 * scaleX,
+                    passed: false,
+                    color: '#228B22'
+                });
+                return;
+            }
+            
+            // 正常管道生成
+            const height = minHeight + Math.random() * availableHeight;
             
             pipes.push({
                 x: canvas.width,
                 topHeight: height,
                 bottomY: height + gap,
                 bottomHeight: canvas.height - height - gap,
-                width: 80 * scaleX, // 缩放后的宽度
+                width: 80 * scaleX,
                 passed: false,
                 color: '#228B22'
             });
+            
+            console.log(`管道生成: 上管道=${height.toFixed(1)}, 间隙=${gap.toFixed(1)}, 下管道起始=${(height + gap).toFixed(1)}, Canvas高度=${canvas.height}`);
         }
         
         // 创建Boss
@@ -879,6 +899,12 @@
             } else if (gameState === 'start') {
                 console.log('从开始界面启动游戏');
                 startGame();
+            } else if (gameState === 'gameOver') {
+                console.log('游戏结束状态，返回首页');
+                goHome();
+            } else if (gameState === 'paused') {
+                console.log('游戏暂停状态，继续游戏');
+                resumeGame();
             } else {
                 console.log('游戏状态不允许跳跃:', gameState);
             }
@@ -930,7 +956,8 @@
             bird.y += bird.velocity;
             
             // 边界检查 - 扣除生命值
-            const groundHeight = 50; // 地面高度
+            const scaleY = canvas.height / 600;
+            const groundHeight = Math.max(50, 50 * scaleY); // 使用与渲染相同的地面高度计算
             if (bird.y <= 0 || bird.y + bird.height >= canvas.height - groundHeight) {
                 birdHealth--;
                 createParticles(bird.x + bird.width/2, bird.y + bird.height/2, '#FF0000', 8);
@@ -1080,7 +1107,9 @@
                     
                     // Boss移动
                     boss.y += Math.sin(Date.now() * 0.005) * boss.moveSpeed;
-                    boss.y = Math.max(50, Math.min(canvas.height - boss.height - 50, boss.y));
+                    const scaleY = canvas.height / 600;
+                    const groundHeight = Math.max(50, 50 * scaleY);
+                    boss.y = Math.max(50, Math.min(canvas.height - boss.height - groundHeight, boss.y));
                     
                     // Boss射击
                     boss.shootTimer++;
@@ -1201,17 +1230,21 @@
                 drawCloud(x, y);
             }
             
-            // 绘制地面
+            // 绘制地面（使用统一的地面高度计算）
+            const scaleY = canvas.height / 600;
+            const groundHeight = Math.max(50, 50 * scaleY); // 确保地面至少50px高
+            
             ctx.fillStyle = '#32CD32';
-            ctx.fillRect(0, canvas.height - 50, canvas.width, 50);
+            ctx.fillRect(0, canvas.height - groundHeight, canvas.width, groundHeight);
             
             // 绘制管道
             ctx.fillStyle = '#228B22';
             pipes.forEach(pipe => {
                 // 上管道
                 ctx.fillRect(pipe.x, 0, pipe.width, pipe.topHeight);
-                // 下管道
-                ctx.fillRect(pipe.x, pipe.bottomY, pipe.width, pipe.bottomHeight);
+                // 下管道 - 确保不与地面重叠
+                const adjustedBottomHeight = Math.min(pipe.bottomHeight, canvas.height - pipe.bottomY - groundHeight);
+                ctx.fillRect(pipe.x, pipe.bottomY, pipe.width, adjustedBottomHeight);
                 
                 // 管道装饰
                 ctx.fillStyle = '#2F4F2F';
@@ -1426,14 +1459,25 @@
         
         // 模式切换
         document.querySelectorAll('.mode-button').forEach(button => {
-            button.addEventListener('click', () => {
+            button.addEventListener('click', (e) => {
+                e.stopPropagation(); // 阻止事件冒泡，防止触发跳跃
+                
+                console.log('模式切换:', button.dataset.mode, '当前游戏状态:', gameState);
+                
                 document.querySelectorAll('.mode-button').forEach(b => b.classList.remove('active'));
                 button.classList.add('active');
                 currentMode = button.dataset.mode;
                 
-                // 如果游戏正在进行，重新开始
-                if (gameState === 'playing') {
-                    initGame();
+                // 只在开始界面时允许切换模式，游戏进行时不自动重启
+                if (gameState === 'start') {
+                    console.log('在开始界面切换模式');
+                    initGame(); // 重新初始化参数
+                    render(); // 重新渲染
+                } else if (gameState === 'playing') {
+                    console.log('游戏进行中，模式将在下次游戏时生效');
+                    // 可以显示一个提示，告诉用户模式将在下次游戏时生效
+                } else {
+                    console.log('其他状态下切换模式');
                 }
             });
         });
