@@ -479,12 +479,12 @@
                         </div>
                         <div class="info-row">
                             <span class="info-label">大小：</span>
-                            <span class="info-value">约15MB</span>
+                            <span class="info-value">约243MB (EXE独立版)</span>
                         </div>
                     </div>
                     <button class="btn btn-primary btn-full">
-                        <span class="emoji">📦</span>
-                        <span class="pixel-font">下载桌面版</span>
+                        <span class="emoji">🎮</span>
+                        <span class="pixel-font">下载EXE独立版</span>
                     </button>
                     <div style="text-align: center; margin-top: 0.5rem;">
                         <a href="/api/downloads/desktop" download="FlapPyBird-Desktop-v1.2.0.zip" 
@@ -546,7 +546,7 @@
         document.addEventListener('DOMContentLoaded', function() {
             // 选择下载区域中的下载按钮
             const downloadBtn = document.querySelector('#download .btn-primary');
-            if (downloadBtn && downloadBtn.textContent.includes('下载桌面版')) {
+            if (downloadBtn && downloadBtn.textContent.includes('下载EXE独立版')) {
                 // 保存按钮原始文本
                 let originalBtnText = downloadBtn.innerHTML;
                 
@@ -641,7 +641,7 @@
                         // 显示下载成功提示
                         setTimeout(() => {
                             if (blob.size > 0) {
-                                alert('🎉 下载完成！\n\n文件名: FlapPyBird-Desktop-v1.2.0.zip\n\n安装步骤:\n1. 解压ZIP文件\n2. 运行"FlapPyBird.exe"\n3. 或双击"启动游戏.bat"\n\n如果遇到问题，请访问 /download_debug.html 进行调试');
+                                alert('🎉 下载完成！\n\n文件名: FlapPyBird-EXE-v1.2.0.zip\n\n安装步骤:\n1. 解压ZIP文件\n2. 双击"FlapPyBird.exe"直接运行\n3. 或双击"启动游戏.bat"启动\n\n✨ 这是真正的EXE独立版，无需安装Python!\n\n如果遇到问题，请访问 /download_debug.html 进行调试');
                             } else {
                                 alert('⚠️ 下载的文件可能有问题\n\n请访问 /download_debug.html 进行详细调试');
                             }

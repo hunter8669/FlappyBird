@@ -125,108 +125,118 @@ class GameAPIHandler(BaseHTTPRequestHandler):
             print(f"[下载] 请求方法: {self.command}")
             print(f"[下载] 用户代理: {self.headers.get('User-Agent', 'Unknown')}")
             
-            # GitHub Releases 下载配置
-            GITHUB_USER = "hunter8669"  # 您的实际GitHub用户名
-            GITHUB_REPO = "FlappyBird"    # 您的仓库名
-            VERSION = "v1.2.0"            # 当前版本
-            
             # 检查用户是否要求源码版本
             query_params = parse_qs(urlparse(self.path).query)
             download_type = query_params.get('type', ['exe'])[0]
             print(f"[下载] 请求类型: {download_type}")
             
-            if download_type == 'exe':
-                # 本地文件下载 - 改进路径检测
+            if download_type == 'exe' or download_type == 'auto':
+                # 优先尝试提供真正的EXE文件
                 import os
                 current_dir = os.path.dirname(os.path.abspath(__file__))
                 project_root = os.path.dirname(current_dir)
                 print(f"[下载] 当前目录: {current_dir}")
                 print(f"[下载] 项目根目录: {project_root}")
                 
-                # 尝试多个可能的文件路径
-                possible_paths = [
-                    os.path.join(project_root, "scripts", "FlapPyBird-v1.2.0-Windows-x64.zip"),
-                    os.path.join(current_dir, "..", "scripts", "FlapPyBird-v1.2.0-Windows-x64.zip"),
-                    os.path.join("scripts", "FlapPyBird-v1.2.0-Windows-x64.zip"),
-                    "FlapPyBird-v1.2.0-Windows-x64.zip"
-                ]
+                # 查找真正的EXE文件
+                exe_file_path = os.path.join(project_root, "scripts", "FlapPyBird.exe")
+                print(f"[下载] 查找EXE文件: {exe_file_path}")
                 
-                local_file_path = None
-                for path in possible_paths:
-                    abs_path = os.path.abspath(path)
-                    print(f"[下载] 尝试路径: {abs_path}")
-                    print(f"[下载] 路径存在: {os.path.exists(abs_path)}")
-                    if os.path.exists(abs_path):
-                        file_size = os.path.getsize(abs_path)
-                        print(f"[下载] 文件大小: {file_size} bytes ({file_size/1024/1024:.1f} MB)")
+                if os.path.exists(exe_file_path):
+                    file_size = os.path.getsize(exe_file_path)
+                    print(f"[下载] 找到EXE文件，大小: {file_size/1024/1024:.1f} MB")
+                    
+                    # 检查文件是否真的是EXE（不是Git LFS指针）
+                    if file_size > 100 * 1024 * 1024:  # 大于100MB才认为是真实EXE
+                        # 创建包含EXE的ZIP包供下载
+                        import tempfile
+                        import zipfile
                         
-                        # 检测是否为Git LFS指针文件
-                        if file_size < 1000:  # LFS指针文件通常很小
-                            try:
-                                with open(abs_path, 'r', encoding='utf-8') as f:
-                                    content = f.read()
-                                    if 'git-lfs.github.com' in content:
-                                        print(f"[下载] 检测到Git LFS指针文件: {abs_path}")
-                                        print(f"[下载] LFS内容: {content}")
-                                        continue  # 跳过LFS文件
-                            except:
-                                pass
+                        print("[下载] 创建EXE下载包...")
+                        temp_zip = tempfile.NamedTemporaryFile(delete=False, suffix='.zip')
+                        temp_zip.close()
                         
-                        if file_size > 1000000:  # 文件大于1MB才认为是真实文件
-                            local_file_path = abs_path
-                            break
-                        else:
-                            print(f"[下载] 文件太小，可能是LFS指针，继续寻找...")
-                
-                if local_file_path:
-                    # 提供本地文件下载
-                    print(f"[下载] 找到有效文件: {local_file_path}")
-                    
-                    # 获取文件大小
-                    file_size = os.path.getsize(local_file_path)
-                    print(f"[下载] 确认文件大小: {file_size/1024/1024:.1f} MB")
-                    
-                    # 确保发送正确的响应头
-                    self.send_response(200)
-                    self.send_header('Content-Type', 'application/zip')
-                    self.send_header('Content-Disposition', 'attachment; filename="FlapPyBird-v1.2.0-Windows-x64.zip"')
-                    self.send_header('Content-Length', str(file_size))
-                    self.send_header('Access-Control-Allow-Origin', '*')
-                    self.send_header('Cache-Control', 'no-cache')
-                    self.end_headers()
-                    
-                    print(f"[下载] 开始发送文件...")
-                    
-                    # 使用流式传输，避免内存不足
-                    chunk_size = 8192  # 8KB chunks
-                    bytes_sent = 0
-                    
-                    try:
-                        with open(local_file_path, 'rb') as f:
-                            while True:
-                                chunk = f.read(chunk_size)
-                                if not chunk:
-                                    break
-                                self.wfile.write(chunk)
-                                bytes_sent += len(chunk)
-                                
-                                # 每发送10MB打印一次进度
-                                if bytes_sent % (10 * 1024 * 1024) == 0:
-                                    print(f"[下载] 已发送: {bytes_sent/1024/1024:.1f} MB")
+                        with zipfile.ZipFile(temp_zip.name, 'w', zipfile.ZIP_DEFLATED) as zip_file:
+                            # 添加EXE文件
+                            zip_file.write(exe_file_path, "FlapPyBird.exe")
+                            
+                            # 添加启动脚本
+                            launcher_path = os.path.join(project_root, "scripts", "启动游戏.bat")
+                            if os.path.exists(launcher_path):
+                                zip_file.write(launcher_path, "启动游戏.bat")
+                            
+                            # 添加说明文件
+                            readme_content = '''FlapPy Bird 增强版 - EXE独立版
+========================================
+
+🎮 快速开始:
+1. 双击 "FlapPyBird.exe" 直接运行游戏
+2. 或双击 "启动游戏.bat" 启动
+
+🎯 游戏特色:
+- 四种游戏模式（经典、限时、反向、Boss战）
+- 丰富的道具系统和Boss战斗
+- 在线用户系统和排行榜
+- 流畅的60FPS游戏体验
+
+📋 系统要求:
+- Windows 7/10/11 (64位)
+- 无需安装Python或其他依赖
+
+🔧 故障排除:
+- 如果游戏无法启动，请检查Windows防火墙设置
+- 某些杀毒软件可能误报，请添加信任
+- 确保有足够的磁盘空间
+
+🌐 在线功能:
+- 注册账号保存游戏成就
+- 查看全球排行榜
+- 游戏内按 U 键访问用户界面
+
+版本: v1.2.0
+大小: 约243MB (包含完整游戏资源)
+更新: ''' + datetime.now().strftime('%Y-%m-%d') + '''
+
+享受游戏！🐦
+'''
+                            zip_file.writestr('README.txt', readme_content.encode('utf-8'))
                         
-                        print(f"[下载] 文件发送完成: {bytes_sent/1024/1024:.1f} MB")
+                        # 发送ZIP文件
+                        with open(temp_zip.name, 'rb') as f:
+                            file_data = f.read()
+                        
+                        file_size = len(file_data)
+                        print(f"[下载] EXE安装包已创建: FlapPyBird-EXE-v1.2.0.zip ({file_size/1024/1024:.1f} MB)")
+                        
+                        # 设置响应头
+                        self.send_response(200)
+                        self.send_header('Content-Type', 'application/zip')
+                        self.send_header('Content-Disposition', 'attachment; filename="FlapPyBird-EXE-v1.2.0.zip"')
+                        self.send_header('Content-Length', str(file_size))
+                        self.send_header('Access-Control-Allow-Origin', '*')
+                        self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+                        self.send_header('Access-Control-Allow-Headers', 'Content-Type')
+                        self.end_headers()
+                        
+                        # 发送文件内容
+                        self.wfile.write(file_data)
+                        
+                        # 清理临时文件
+                        os.unlink(temp_zip.name)
+                        
+                        print(f"[下载] EXE安装包已发送: {file_size/1024/1024:.1f} MB")
                         return
-                    except Exception as e:
-                        print(f"[错误] 文件传输失败: {e}")
-                        # 注意：此时已经发送了响应头，不能再发送JSON错误
-                        return
+                    else:
+                        print(f"[下载] EXE文件太小({file_size} bytes)，可能是Git LFS指针")
+                else:
+                    print(f"[下载] EXE文件不存在: {exe_file_path}")
                 
-                # 如果找不到真实的EXE文件，自动切换到源码版本
-                print(f"[下载] 未找到有效的EXE文件（可能都是Git LFS指针），切换到源码版本")
-                download_type = 'source'  # 强制切换到源码版本
+                # 如果没有找到真实EXE，切换到源码版本
+                print(f"[下载] 未找到真实EXE文件，自动切换到源码版本")
+                download_type = 'source'
             
             if download_type == 'source':
-                # 提供源码版本（现有逻辑）
+                # 提供源码版本（现有逻辑保持不变）
                 print("[下载] 创建源码安装包...")
                 
                 # 创建临时ZIP文件
@@ -268,12 +278,12 @@ pip install pyinstaller pygame
 echo.
 echo 开始构建EXE文件...
 cd scripts
-python build_exe.py
+python build_exe_now.py
 
 if %errorlevel% equ 0 (
     echo.
     echo [成功] EXE文件构建完成！
-    echo 可执行文件位置：scripts/dist/FlapPyBird.exe
+    echo 可执行文件位置：scripts/FlapPyBird.exe
     echo.
 ) else (
     echo.
@@ -339,17 +349,15 @@ if %errorlevel% neq 0 (
                     zip_file.writestr('启动游戏.bat', startup_script.encode('gbk'))
                     
                     # 添加构建脚本
-                    build_script_path = '../scripts/build_exe.py'
+                    build_script_path = '../scripts/build_exe_now.py'
                     if os.path.exists(build_script_path):
-                        zip_file.write(build_script_path, 'scripts/build_exe.py')
+                        zip_file.write(build_script_path, 'scripts/build_exe_now.py')
                     
-                    # 创建README说明文件（移除emoji，使用ASCII兼容字符）
-                    readme_content = '''FlapPy Bird 增强版游戏
-================================
+                    # 创建README说明文件
+                    readme_content = '''FlapPy Bird 增强版游戏 - 源码版
+==================================
 
-游戏特色：
-
-快速开始：
+🚀 快速开始:
 
 方法一：构建EXE文件（推荐）
 1. 双击"构建EXE.bat"
@@ -361,26 +369,26 @@ if %errorlevel% neq 0 (
 2. 等待自动安装依赖
 3. 游戏自动启动
 
-游戏特色：
+🎮 游戏特色:
 - 四种游戏模式（经典、限时、反向、Boss战）
 - 丰富的道具系统
 - Boss战斗和武器系统
 - 流畅的60FPS游戏体验
 
-系统要求：
+📋 系统要求:
 - Windows 7/10/11
 - Python 3.9+（如果使用源码运行）
 
-提示：
+💡 提示:
 - 推荐使用"构建EXE.bat"生成独立的EXE文件
 - EXE文件可以在没有Python的电脑上运行
 - 首次构建需要联网下载依赖包
 
-项目地址：https://github.com/yourusername/FlapPyBird
-版本：v1.2.0 (源码版 + EXE构建工具)
-更新时间：''' + datetime.now().strftime('%Y-%m-%d') + '''
+🌐 项目地址: https://github.com/yourusername/FlapPyBird
+版本: v1.2.0 (源码版 + EXE构建工具)
+更新时间: ''' + datetime.now().strftime('%Y-%m-%d') + '''
 
-享受游戏吧！
+享受游戏吧！🐦
 '''
                     
                     zip_file.writestr('README.txt', readme_content.encode('utf-8'))
@@ -390,7 +398,7 @@ if %errorlevel% neq 0 (
                     file_data = f.read()
                 
                 file_size = len(file_data)
-                print(f"[下载] 源码安装包已创建: FlapPyBird-Source-with-EXE-Builder-v1.2.0.zip ({file_size} bytes)")
+                print(f"[下载] 源码安装包已创建: FlapPyBird-Source-with-EXE-Builder-v1.2.0.zip ({file_size/1024/1024:.1f} MB)")
                 
                 # 设置响应头
                 self.send_response(200)
@@ -408,7 +416,7 @@ if %errorlevel% neq 0 (
                 # 清理临时文件
                 os.unlink(temp_zip.name)
                 
-                print(f"[下载] 源码安装包已发送: {file_size} bytes")
+                print(f"[下载] 源码安装包已发送: {file_size/1024/1024:.1f} MB")
                 return
             
             else:
@@ -419,17 +427,17 @@ if %errorlevel% neq 0 (
                     "options": [
                         {
                             "type": "exe",
-                            "title": "EXE应用程序（推荐）",
+                            "title": "EXE独立版（推荐）",
                             "description": "可直接运行的独立应用程序，无需安装Python",
-                            "size": "241 MB",
-                            "download_url": f"/api/download?type=exe"
+                            "size": "约243 MB",
+                            "download_url": f"/api/downloads/desktop?type=exe"
                         },
                         {
                             "type": "source", 
                             "title": "源码版本",
                             "description": "包含Python源码和构建工具，需要Python环境",
                             "size": "约 10 MB",
-                            "download_url": f"/api/download?type=source"
+                            "download_url": f"/api/downloads/desktop?type=source"
                         }
                     ]
                 }
