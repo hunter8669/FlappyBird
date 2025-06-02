@@ -587,7 +587,39 @@
                         if (blob.size < 1000) {
                             const textContent = await blob.text();
                             if (textContent.includes('git-lfs.github.com')) {
-                                throw new Error('检测到Git LFS问题：EXE文件过大被LFS管理，将自动提供源码版本。源码版本包含EXE构建工具，可本地构建EXE文件。');
+                                // 这不是错误，而是正常的自动切换
+                                console.log('检测到Git LFS问题，自动切换到源码版本');
+                                alert('💡 检测到Git LFS问题\n\nEXE文件过大被Git LFS管理，系统已自动为您提供源码版本。\n\n源码版本特点：\n✅ 包含完整的EXE构建工具\n✅ 双击"构建EXE.bat"即可生成EXE文件\n✅ 无需Python环境即可运行生成的EXE\n\n正在开始下载源码版本...');
+                                
+                                // 重新请求源码版本
+                                const sourceResponse = await fetch('/api/downloads/desktop?type=source');
+                                if (!sourceResponse.ok) {
+                                    throw new Error(`下载源码版本失败: ${sourceResponse.status}`);
+                                }
+                                
+                                const sourceBlob = await sourceResponse.blob();
+                                console.log(`源码版本下载完成: ${sourceBlob.size} bytes`);
+                                
+                                // 下载源码版本
+                                const url = window.URL.createObjectURL(sourceBlob);
+                                const link = document.createElement('a');
+                                link.href = url;
+                                link.download = 'FlapPyBird-Source-with-EXE-Builder-v1.2.0.zip';
+                                link.style.display = 'none';
+                                
+                                document.body.appendChild(link);
+                                link.click();
+                                document.body.removeChild(link);
+                                window.URL.revokeObjectURL(url);
+                                
+                                console.log('源码版本下载已开始...');
+                                
+                                // 显示成功信息
+                                setTimeout(() => {
+                                    alert('🎉 源码版本下载完成！\n\n文件名: FlapPyBird-Source-with-EXE-Builder-v1.2.0.zip\n\n使用步骤:\n1. 解压ZIP文件\n2. 双击"构建EXE.bat"生成EXE文件\n3. 或直接双击"启动游戏.bat"运行源码版\n\n首次构建EXE需要下载依赖，请保持网络连接。');
+                                }, 1000);
+                                
+                                return; // 正常结束，不抛出错误
                             } else {
                                 throw new Error('下载的文件异常小，可能是服务器错误信息而非游戏文件');
                             }
