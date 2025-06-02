@@ -482,10 +482,23 @@
         // 触摸事件处理函数
         function handleTouch(e) {
             e.preventDefault();
+            
+            // 检查是否点击了UI按钮
+            const target = e.target;
+            if (target.classList.contains('mode-button') || 
+                target.classList.contains('start-button') || 
+                target.classList.contains('restart-button') ||
+                target.closest('.mode-selector') ||
+                target.closest('.game-instructions') ||
+                target.closest('.game-over')) {
+                console.log('触摸UI按钮，不触发跳跃');
+                return; // 不处理UI按钮的触摸
+            }
+            
             const touchCount = (window.touchTestCount || 0) + 1;
             window.touchTestCount = touchCount;
             
-            console.log('触摸事件触发:', e.type, '第', touchCount, '次');
+            console.log('触摸事件触发:', e.type, '第', touchCount, '次', '目标:', target.tagName);
             
             // 更新调试信息
             const debugElement = document.getElementById('touchDebug');
@@ -506,14 +519,9 @@
             
             const canvas = document.getElementById('gameCanvas');
             
-            // 添加多种触摸事件监听器
+            // 只在Canvas上添加触摸事件监听器，不要添加到整个容器
             canvas.addEventListener('touchstart', handleTouch, { passive: false });
             canvas.addEventListener('touchend', handleTouch, { passive: false });
-            
-            // 也添加到整个游戏容器
-            const gameContainer = document.querySelector('.game-container');
-            gameContainer.addEventListener('touchstart', handleTouch, { passive: false });
-            gameContainer.addEventListener('touchend', handleTouch, { passive: false });
             
             // 手机端阻止页面级别的默认手势（但不影响游戏内触摸）
             if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
@@ -1459,8 +1467,10 @@
         
         // 模式切换
         document.querySelectorAll('.mode-button').forEach(button => {
-            button.addEventListener('click', (e) => {
+            // 为每个模式按钮添加点击和触摸事件
+            const handleModeChange = (e) => {
                 e.stopPropagation(); // 阻止事件冒泡，防止触发跳跃
+                e.preventDefault(); // 阻止默认行为
                 
                 console.log('模式切换:', button.dataset.mode, '当前游戏状态:', gameState);
                 
@@ -1479,7 +1489,11 @@
                 } else {
                     console.log('其他状态下切换模式');
                 }
-            });
+            };
+            
+            // 绑定多种事件，确保在各种设备上都能工作
+            button.addEventListener('click', handleModeChange);
+            button.addEventListener('touchstart', handleModeChange, { passive: false });
         });
         
         // 防止页面滚动
