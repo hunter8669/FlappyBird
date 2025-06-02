@@ -225,7 +225,7 @@ class GameAPIHandler(BaseHTTPRequestHandler):
                 print(f"[下载] 未找到有效的EXE文件（可能都是Git LFS指针），切换到源码版本")
                 download_type = 'source'  # 强制切换到源码版本
             
-            elif download_type == 'source':
+            if download_type == 'source':
                 # 提供源码版本（现有逻辑）
                 print("[下载] 创建源码安装包...")
                 
