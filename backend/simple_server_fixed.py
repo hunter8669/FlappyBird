@@ -48,9 +48,9 @@ class GameAPIHandler(BaseHTTPRequestHandler):
         
         # API路由
         if path == '/':
-            # 重定向到前端首页
+            # 直接重定向到游戏页面
             self.send_response(302)
-            self.send_header('Location', '/index.html')
+            self.send_header('Location', '/game.html')
             self.end_headers()
             
         elif path == '/health':
@@ -183,28 +183,31 @@ def run_server(port=None):
     # Replit环境需要绑定到0.0.0.0，本地开发可以使用localhost
     if os.environ.get('REPL_ID'):  # Replit环境
         host = '0.0.0.0'
-        server_url = f"https://{os.environ.get('REPL_SLUG', 'app')}.{os.environ.get('REPL_OWNER', 'user')}.repl.co"
-        print(f"🌐 检测到Replit环境")
-        print(f"🚀 FlapPy Bird Web版服务器启动成功!")
-        print(f"📍 公网访问地址: {server_url}")
-        print(f"🎮 Web版游戏: {server_url}/game.html")
-        print(f"📋 管理后台: {server_url}/admin")
-        print(f"❤️  健康检查: {server_url}/health")
+        repl_slug = os.environ.get('REPL_SLUG', 'flappybird')
+        repl_owner = os.environ.get('REPL_OWNER', 'user')
+        server_url = f"https://{repl_slug}.{repl_owner}.repl.co"
+        print(f"🌐 Replit环境检测成功")
+        print(f"🚀 FlapPy Bird Web版公网服务器启动!")
+        print(f"📍 公网地址: {server_url}")
+        print(f"🎮 直接游戏: {server_url} (自动跳转到游戏)")
+        print(f"🎯 游戏页面: {server_url}/game.html")
+        print(f"❤️  状态检查: {server_url}/health")
     else:  # 本地环境
         host = ''
         print(f"💻 本地开发环境")
         print(f"🚀 FlapPy Bird API服务器启动成功!")
-        print(f"📍 本地访问地址: http://localhost:{port}")
-        print(f"🎮 Web版游戏: http://localhost:{port}/game.html")
-        print(f"📋 管理后台: http://localhost:{port}/admin")
-        print(f"❤️  健康检查: http://localhost:{port}/health")
+        print(f"📍 本地地址: http://localhost:{port}")
+        print(f"🎮 直接游戏: http://localhost:{port}")
+        print(f"🎯 游戏页面: http://localhost:{port}/game.html")
+        print(f"❤️  状态检查: http://localhost:{port}/health")
     
     server_address = (host, port)
     httpd = HTTPServer(server_address, GameAPIHandler)
     
-    print(f"🔧 服务器绑定: {host}:{port}")
-    print("按 Ctrl+C 停止服务器...")
-    print("=" * 50)
+    print(f"🔧 服务器配置: {host if host else 'localhost'}:{port}")
+    print("💡 按 Ctrl+C 停止服务器")
+    print("🎉 一切就绪！在浏览器中访问上面的链接开始游戏!")
+    print("=" * 60)
     
     try:
         httpd.serve_forever()
