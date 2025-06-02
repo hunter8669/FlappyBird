@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>下载调试页面</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .debug-card {
+            background: #2a2a2a;
+            padding: 1.5rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 0.5rem;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        #log {
+            background: #000;
+            color: #0f0;
+            padding: 1rem;
+            border-radius: 5px;
+            font-family: monospace;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 下载功能调试工具</h1>
+    
+    <div class="debug-card">
+        <h3>测试下载方法</h3>
+        <button onclick="downloadMethod1()">方法1: Fetch + Blob</button>
+        <button onclick="downloadMethod2()">方法2: 直接链接</button>
+        <button onclick="downloadMethod3()">方法3: XMLHttpRequest</button>
+        <button onclick="checkFileInfo()">检查文件信息</button>
+        <button onclick="clearLog()">清空日志</button>
+    </div>
+    
+    <div class="debug-card">
+        <h3>下载日志</h3>
+        <div id="log"></div>
+    </div>
+
+    <script>
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.textContent += `[${timestamp}] ${message}\n`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        function clearLog() {
+            document.getElementById('log').textContent = '';
+        }
+
+        // 方法1: 使用Fetch API + Blob
+        async function downloadMethod1() {
+            try {
+                log('开始方法1下载...');
+                
+                const response = await fetch('/api/downloads/desktop');
+                log(`响应状态: ${response.status} ${response.statusText}`);
+                log(`Content-Type: ${response.headers.get('Content-Type')}`);
+                log(`Content-Length: ${response.headers.get('Content-Length')}`);
+                log(`Content-Disposition: ${response.headers.get('Content-Disposition')}`);
+                
+                if (!response.ok) {
+                    const text = await response.text();
+                    log(`错误响应内容: ${text}`);
+                    return;
+                }
+                
+                const blob = await response.blob();
+                log(`Blob大小: ${blob.size} bytes (${(blob.size/1024/1024).toFixed(1)} MB)`);
+                log(`Blob类型: ${blob.type}`);
+                
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'FlapPyBird-Debug-Method1.zip';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                
+                log('方法1下载完成');
+            } catch (error) {
+                log(`方法1错误: ${error.message}`);
+                console.error(error);
+            }
+        }
+
+        // 方法2: 直接链接下载
+        function downloadMethod2() {
+            try {
+                log('开始方法2下载...');
+                
+                const a = document.createElement('a');
+                a.href = '/api/downloads/desktop';
+                a.download = 'FlapPyBird-Debug-Method2.zip';
+                a.style.display = 'none';
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                
+                log('方法2下载已触发');
+            } catch (error) {
+                log(`方法2错误: ${error.message}`);
+            }
+        }
+
+        // 方法3: XMLHttpRequest
+        function downloadMethod3() {
+            try {
+                log('开始方法3下载...');
+                
+                const xhr = new XMLHttpRequest();
+                xhr.open('GET', '/api/downloads/desktop', true);
+                xhr.responseType = 'blob';
+                
+                xhr.onload = function() {
+                    if (xhr.status === 200) {
+                        log(`XHR状态: ${xhr.status}`);
+                        log(`响应类型: ${xhr.response.type}`);
+                        log(`响应大小: ${xhr.response.size} bytes`);
+                        
+                        const blob = xhr.response;
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = 'FlapPyBird-Debug-Method3.zip';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                        window.URL.revokeObjectURL(url);
+                        
+                        log('方法3下载完成');
+                    } else {
+                        log(`XHR错误: ${xhr.status} ${xhr.statusText}`);
+                    }
+                };
+                
+                xhr.onerror = function() {
+                    log('XHR网络错误');
+                };
+                
+                xhr.onprogress = function(e) {
+                    if (e.lengthComputable) {
+                        const percent = ((e.loaded / e.total) * 100).toFixed(1);
+                        log(`下载进度: ${percent}% (${e.loaded}/${e.total})`);
+                    }
+                };
+                
+                xhr.send();
+            } catch (error) {
+                log(`方法3错误: ${error.message}`);
+            }
+        }
+
+        // 检查文件信息
+        async function checkFileInfo() {
+            try {
+                log('检查文件信息...');
+                
+                const response = await fetch('/api/downloads/desktop', {
+                    method: 'HEAD'
+                });
+                
+                if (response.status === 501) {
+                    log('服务器不支持HEAD请求，尝试GET请求...');
+                    
+                    const getResponse = await fetch('/api/downloads/desktop');
+                    log(`GET响应状态: ${getResponse.status}`);
+                    log(`Content-Type: ${getResponse.headers.get('Content-Type')}`);
+                    log(`Content-Length: ${getResponse.headers.get('Content-Length')}`);
+                    log(`Content-Disposition: ${getResponse.headers.get('Content-Disposition')}`);
+                    
+                    // 读取前100字节检查文件格式
+                    const blob = await getResponse.blob();
+                    const firstBytes = await blob.slice(0, 100).arrayBuffer();
+                    const uint8Array = new Uint8Array(firstBytes);
+                    const hexString = Array.from(uint8Array)
+                        .map(b => b.toString(16).padStart(2, '0'))
+                        .join(' ');
+                    log(`文件头部(hex): ${hexString}`);
+                    
+                    // 检查ZIP文件签名
+                    if (uint8Array[0] === 0x50 && uint8Array[1] === 0x4B) {
+                        log('✅ 检测到有效的ZIP文件签名');
+                    } else {
+                        log('❌ 未检测到ZIP文件签名');
+                    }
+                    
+                } else {
+                    log(`HEAD响应状态: ${response.status}`);
+                    for (const [key, value] of response.headers.entries()) {
+                        log(`${key}: ${value}`);
+                    }
+                }
+            } catch (error) {
+                log(`检查错误: ${error.message}`);
+            }
+        }
+
+        // 页面加载时显示欢迎信息
+        document.addEventListener('DOMContentLoaded', function() {
+            log('下载调试工具已加载');
+            log('请选择一种下载方法进行测试');
+        });
+    </script>
+</body>
+</html> 

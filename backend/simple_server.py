@@ -131,14 +131,22 @@ class GameAPIHandler(BaseHTTPRequestHandler):
             download_type = query_params.get('type', ['exe'])[0]
             
             if download_type == 'exe':
-                # 本地文件下载
-                local_file_path = "../scripts/FlapPyBird-v1.2.0-Windows-x64.zip"
+                # 本地文件下载 - 修复路径问题
+                import os
+                current_dir = os.path.dirname(os.path.abspath(__file__))
+                project_root = os.path.dirname(current_dir)
+                local_file_path = os.path.join(project_root, "scripts", "FlapPyBird-v1.2.0-Windows-x64.zip")
+                
+                print(f"[下载] 检查文件路径: {local_file_path}")
+                print(f"[下载] 文件是否存在: {os.path.exists(local_file_path)}")
+                
                 if os.path.exists(local_file_path):
                     # 提供本地文件下载
                     print(f"[下载] 提供本地EXE文件下载")
                     
                     # 获取文件大小
                     file_size = os.path.getsize(local_file_path)
+                    print(f"[下载] 文件大小: {file_size/1024/1024:.1f} MB")
                     
                     self.send_response(200)
                     self.send_header('Content-Type', 'application/zip')
@@ -167,19 +175,22 @@ class GameAPIHandler(BaseHTTPRequestHandler):
                         self.send_response(500)
                         self.send_header('Content-Type', 'application/json; charset=utf-8')
                         self.send_header('Access-Control-Allow-Origin', '*')
+                        self.end_headers()
                         error_response = {"error": "文件传输失败", "message": str(e)}
                         self.wfile.write(json.dumps(error_response, ensure_ascii=False).encode('utf-8'))
                         return
                 
                 # 如果本地文件不存在
-                print(f"[下载] 本地EXE文件不存在")
+                print(f"[下载] 本地EXE文件不存在: {local_file_path}")
                 self.send_response(404)
                 self.send_header('Content-Type', 'application/json; charset=utf-8')
                 self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
                 error_response = {
                     "error": "文件不存在", 
                     "message": "游戏文件尚未准备就绪，请稍后重试或联系管理员",
-                    "filename": "FlapPyBird-v1.2.0-Windows-x64.zip"
+                    "filename": "FlapPyBird-v1.2.0-Windows-x64.zip",
+                    "search_path": local_file_path
                 }
                 self.wfile.write(json.dumps(error_response, ensure_ascii=False).encode('utf-8'))
                 return

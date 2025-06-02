@@ -89,17 +89,17 @@ const DownloadPage = () => {
       <div className="container mx-auto px-4">
         {/* 页面标题 */}
         <div className="text-center mb-8">
-          <h1 className="pixel-font text-3xl text-white mb-4">📦 下载游戏</h1>
+        <h1 className="pixel-font text-3xl text-white mb-4">📦 下载游戏</h1>
           <p className="text-blue-100 text-lg">
             下载独立的EXE游戏文件，无需Python环境即可游戏
-          </p>
-        </div>
+        </p>
+      </div>
 
         <div className="max-w-4xl mx-auto grid gap-8">
-          
-          {/* 主要下载区域 */}
+
+      {/* 主要下载区域 */}
           <div className="bg-white/10 backdrop-blur-md rounded-2xl p-8 border border-white/20">
-            {/* 桌面版下载 */}
+        {/* 桌面版下载 */}
             <div className="text-center">
               <div className="text-6xl mb-4">🎮</div>
               <h2 className="pixel-font text-2xl text-white mb-6">Windows 桌面版</h2>
@@ -108,20 +108,20 @@ const DownloadPage = () => {
                 <div className="bg-black/20 rounded-lg p-3">
                   <div className="text-gray-200">版本</div>
                   <span className="text-white font-bold">{downloadStats.version}</span>
-                </div>
+            </div>
                 <div className="bg-black/20 rounded-lg p-3">
                   <div className="text-gray-200">大小</div>
                   <span className="text-white font-bold">{downloadStats.size}</span>
-                </div>
+            </div>
                 <div className="bg-black/20 rounded-lg p-3">
                   <div className="text-gray-200">更新</div>
                   <span className="text-white font-bold">{downloadStats.updated}</span>
-                </div>
+            </div>
                 <div className="bg-black/20 rounded-lg p-3">
                   <div className="text-gray-200">下载次数</div>
                   <span className="text-white font-bold">{downloadStats.downloads}</span>
-                </div>
-              </div>
+            </div>
+          </div>
 
               <button 
                 className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 text-white px-8 py-4 rounded-full text-lg font-bold transition-all duration-300 transform hover:scale-105 shadow-lg flex items-center justify-center mx-auto"
@@ -129,7 +129,7 @@ const DownloadPage = () => {
               >
                 <span className="text-2xl mr-2">⬇️</span>
                 <span className="pixel-font">下载独立版游戏</span>
-              </button>
+          </button>
 
               {/* 备用下载按钮 */}
               <div className="mt-4 space-x-4">
@@ -139,8 +139,8 @@ const DownloadPage = () => {
                 >
                   <span className="text-lg mr-2">📦</span>
                   <span className="pixel-font">源码版本</span>
-                </button>
-                
+          </button>
+
                 <button
                   onClick={() => window.open('https://github.com/yourusername/FlapPyBird/releases/latest', '_blank')}
                   className="bg-gradient-to-r from-purple-500 to-indigo-500 hover:from-purple-600 hover:to-indigo-600 text-white px-6 py-3 rounded-full font-bold transition-all duration-300 transform hover:scale-105 shadow-lg inline-flex items-center"
@@ -159,8 +159,8 @@ const DownloadPage = () => {
                 </p>
                 <p className="text-yellow-200 text-sm">
                   🌟 支持所有Windows版本（Win7/10/11）
-                </p>
-              </div>
+          </p>
+        </div>
             </div>
           </div>
 
@@ -233,8 +233,8 @@ const DownloadPage = () => {
                   </tr>
                 </tbody>
               </table>
-            </div>
-          </div>
+        </div>
+      </div>
 
           {/* 安装说明 */}
           <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/20">
@@ -249,8 +249,8 @@ const DownloadPage = () => {
                   <li>3. Windows安全提示选择"仍要运行"</li>
                   <li>4. 开始游戏！</li>
                 </ol>
-              </div>
-              
+      </div>
+
               <div>
                 <h4 className="text-blue-300 font-bold mb-2">🔧 源码版（需Python）</h4>
                 <ol className="text-gray-200 space-y-1 text-sm">
@@ -276,8 +276,8 @@ const DownloadPage = () => {
                   <li>• 分辨率：1024x768或更高</li>
                   <li>• 无需其他软件</li>
                 </ul>
-              </div>
-              
+      </div>
+
               <div>
                 <h4 className="text-blue-300 font-bold mb-2">源码版</h4>
                 <ul className="space-y-1 text-sm">
@@ -286,9 +286,9 @@ const DownloadPage = () => {
                   <li>• 网络连接（首次安装依赖）</li>
                   <li>• 至少200MB可用空间</li>
                 </ul>
-              </div>
-            </div>
           </div>
+        </div>
+      </div>
 
         </div>
       </div>
