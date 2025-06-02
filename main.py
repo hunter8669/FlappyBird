@@ -20,7 +20,7 @@ def main():
     
     try:
         # 导入并启动服务器
-        from simple_server import run_server
+        from simple_server_fixed import run_server
         run_server()
     except ImportError as e:
         print(f"❌ 导入错误: {e}")

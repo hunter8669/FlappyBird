@@ -3,6 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>FlapPy Bird - 经典小鸟游戏增强版</title>
     <style>
         * {
@@ -593,7 +596,7 @@
                     本项目基于pygame开发，完全开源。感谢原始Flappy Bird的创意！
                 </p>
                 <div class="version">
-                    Version 1.2.0 | 支持Windows、macOS、Linux
+                    Version 1.2.0 | 支持Windows、macOS、Linux | 更新时间: 2024-06-02 22:45
                 </div>
             </div>
         </div>
@@ -667,18 +670,18 @@
         // 兼容性说明下载
         function downloadCompatibilityGuide() {
             console.log('下载兼容性说明...');
-            
+                        
             // 创建下载链接
-            const link = document.createElement('a');
+                        const link = document.createElement('a');
             link.href = '/api/downloads/desktop?type=compatibility';
             link.download = '兼容性解决方案.txt';
-            link.style.display = 'none';
-            
+                        link.style.display = 'none';
+                        
             // 触发下载
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        
             // 显示提示
             setTimeout(() => {
                 alert('📋 兼容性说明已下载！\n\n包含详细的问题解决方案:\n• Visual C++运行时库安装\n• 兼容模式设置\n• 源码版使用方法\n\n请查看下载的文本文件。');
@@ -687,20 +690,20 @@
 
         // 下载统计记录
         async function trackDownload(type) {
-            try {
-                await fetch('/api/downloads/track', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
+                        try {
+                            await fetch('/api/downloads/track', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({
                         type: type,
-                        version: '1.2.0',
-                        timestamp: new Date().toISOString()
-                    })
-                });
+                                    version: '1.2.0',
+                                    timestamp: new Date().toISOString()
+                                })
+                            });
                 console.log(`下载统计已记录: ${type}`);
-            } catch (error) {
+                    } catch (error) {
                 console.error('记录统计失败:', error);
             }
         }
