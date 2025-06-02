@@ -169,6 +169,7 @@
             <div class="game-info">
                 <div>分数: <span id="score">0</span></div>
                 <div>最高分: <span id="highScore">0</span></div>
+                <div>生命: <span id="healthDisplay">❤️❤️❤️</span></div>
                 <div id="timeDisplay" style="display: none;">时间: <span id="timeLeft">90</span>s</div>
             </div>
             
@@ -220,6 +221,16 @@
         let timeLeft = 90;
         let gameSpeed = 2;
         let isReverse = false;
+        let gameStartBuffer = 180; // 从120增加到180，3秒的缓冲时间
+        let birdHealth = 3;        // 小鸟生命值
+        let maxBirdHealth = 3;     // 最大生命值
+        let bossWave = 1;          // Boss波次
+        let lastBossTime = 0;      // 上次有boss的时间
+        
+        // 定时器管理
+        let shootTimerInterval = null;
+        let gameAnimationFrame = null;
+        let isGameLoopRunning = false;
         
         // Canvas 和上下文
         const canvas = document.getElementById('gameCanvas');
@@ -232,18 +243,25 @@
             width: 30,
             height: 25,
             velocity: 0,
-            gravity: 0.6,
-            jump: -12,
-            color: '#FFD700'
+            gravity: 0.15,     
+            jump: -6,          
+            maxFallSpeed: 3,   
+            color: '#FFD700',
+            autoShootTimer: 0  // 自动射击计时器
         };
         
         let pipes = [];
         let particles = [];
         let powerUps = [];
         let boss = null;
+        let birdBullets = []; // 清空小鸟子弹
         
         // 背景
         let backgroundOffset = 0;
+        
+        // 跳跃和射击
+        let isMouseDown = false;
+        let shootTimer = 0;
         
         // 更新显示
         function updateUI() {
@@ -258,6 +276,44 @@
             } else {
                 timeDisplay.style.display = 'none';
             }
+            
+            // 更新生命值显示
+            const healthDisplay = document.getElementById('healthDisplay');
+            if (healthDisplay) {
+                let healthText = '';
+                for (let i = 0; i < maxBirdHealth; i++) {
+                    healthText += i < birdHealth ? '❤️' : '🖤';
+                }
+                healthDisplay.textContent = healthText;
+            }
+        }
+        
+        // 清理所有定时器和循环
+        function cleanupGame() {
+            // 清理射击定时器
+            if (shootTimerInterval) {
+                clearInterval(shootTimerInterval);
+                shootTimerInterval = null;
+            }
+            
+            // 清理动画帧
+            if (gameAnimationFrame) {
+                cancelAnimationFrame(gameAnimationFrame);
+                gameAnimationFrame = null;
+            }
+            
+            isGameLoopRunning = false;
+        }
+        
+        // 初始化定时器
+        function initTimers() {
+            // 清理旧的定时器
+            cleanupGame();
+            
+            // 创建新的射击定时器
+            shootTimerInterval = setInterval(() => {
+                if (shootTimer > 0) shootTimer--;
+            }, 16); // 约60FPS
         }
         
         // 初始化游戏
@@ -265,40 +321,49 @@
             bird.x = 100;
             bird.y = canvas.height / 2;
             bird.velocity = 0;
+            bird.autoShootTimer = 0;
             pipes = [];
             particles = [];
             powerUps = [];
             boss = null;
+            birdBullets = []; // 清空小鸟子弹
             score = 0;
             timeLeft = 90;
             backgroundOffset = 0;
+            gameStartBuffer = 180; // 从120增加到180，3秒的缓冲时间
+            birdHealth = maxBirdHealth; // 重置生命值
+            bossWave = 1; // 重置Boss波次
             
             // 根据模式设置
             switch(currentMode) {
                 case 'classic':
-                    gameSpeed = 2;
+                    gameSpeed = 1;             
                     isReverse = false;
-                    bird.gravity = 0.6;
-                    bird.jump = -12;
+                    bird.gravity = 0.15;       
+                    bird.jump = -6;            // 增加跳跃力度
+                    bird.maxFallSpeed = 3;     
                     break;
                 case 'timed':
-                    gameSpeed = 2.5;
+                    gameSpeed = 1.5;           
                     isReverse = false;
-                    bird.gravity = 0.6;
-                    bird.jump = -12;
+                    bird.gravity = 0.15;       
+                    bird.jump = -6;            // 增加跳跃力度
+                    bird.maxFallSpeed = 3;     
                     break;
                 case 'reverse':
-                    gameSpeed = 2;
+                    gameSpeed = 1;             
                     isReverse = true;
-                    bird.gravity = -0.6;
-                    bird.jump = 12;
+                    bird.gravity = -0.15;      
+                    bird.jump = 6;             // 增加反向跳跃力度
+                    bird.maxFallSpeed = 3;     
                     bird.y = canvas.height / 2;
                     break;
                 case 'boss':
-                    gameSpeed = 1.5;
+                    gameSpeed = 0.8;           
                     isReverse = false;
-                    bird.gravity = 0.6;
-                    bird.jump = -12;
+                    bird.gravity = 0.15;       
+                    bird.jump = -6;            // 增加跳跃力度
+                    bird.maxFallSpeed = 3;     
                     createBoss();
                     break;
             }
@@ -308,12 +373,21 @@
         
         // 开始游戏
         function startGame() {
+            // 清理之前的游戏资源
+            cleanupGame();
+            
             gameState = 'playing';
             document.getElementById('startScreen').style.display = 'none';
             document.getElementById('gameOverScreen').style.display = 'none';
             document.getElementById('gameTitle').style.display = 'none';
+            
             initGame();
-            gameLoop();
+            initTimers();
+            
+            // 只在没有运行游戏循环时启动
+            if (!isGameLoopRunning) {
+                gameLoop();
+            }
         }
         
         // 重新开始游戏
@@ -325,17 +399,29 @@
         function resumeGame() {
             gameState = 'playing';
             document.getElementById('pauseScreen').style.display = 'none';
-            gameLoop();
+            
+            // 如果游戏循环没有运行，重新启动
+            if (!isGameLoopRunning) {
+                gameLoop();
+            }
         }
         
         // 返回首页
         function goHome() {
-            window.location.href = '/';
+            cleanupGame(); // 清理游戏资源
+            gameState = 'start';
+            document.getElementById('gameOverScreen').style.display = 'none';
+            document.getElementById('startScreen').style.display = 'block';
+            document.getElementById('gameTitle').style.display = 'block';
+            initGame(); // 重置游戏状态
+            render(); // 渲染初始画面
         }
         
         // 游戏结束
         function gameOver() {
             gameState = 'gameOver';
+            isGameLoopRunning = false; // 停止游戏循环
+            
             document.getElementById('finalScore').textContent = score;
             document.getElementById('bestScore').textContent = highScore;
             document.getElementById('gameOverScreen').style.display = 'block';
@@ -367,8 +453,8 @@
         
         // 创建管道
         function createPipe() {
-            const gap = 150;
-            const minHeight = 50;
+            const gap = 180;               // 从150增加到180，更大的通道
+            const minHeight = 80;          // 从50增加到80，更合理的最小高度
             const maxHeight = canvas.height - gap - minHeight;
             const height = Math.random() * (maxHeight - minHeight) + minHeight;
             
@@ -385,17 +471,23 @@
         
         // 创建Boss
         function createBoss() {
+            const baseHealth = 10;
+            const healthIncrease = Math.floor((bossWave - 1) * 5); // 每波增加5血
+            const maxHealth = baseHealth + healthIncrease;
+            
             boss = {
                 x: canvas.width - 100,
                 y: canvas.height / 2,
-                width: 80,
-                height: 80,
-                health: 10,
-                maxHealth: 10,
-                moveSpeed: 1,
+                width: 80 + Math.min(bossWave * 5, 40), // 体型随波次增大，最多增大40
+                height: 80 + Math.min(bossWave * 5, 40),
+                health: maxHealth,
+                maxHealth: maxHealth,
+                moveSpeed: 1 + bossWave * 0.2, // 减小移动速度增长
                 shootTimer: 0,
                 bullets: [],
-                color: '#FF4500'
+                color: `hsl(${(bossWave * 30) % 360}, 70%, 50%)`, // 不同波次不同颜色
+                wave: bossWave,
+                shootInterval: Math.max(80 - bossWave * 8, 40) // 增加射击间隔，减缓射击频率
             };
         }
         
@@ -428,11 +520,32 @@
             }
         }
         
-        // 跳跃
+        // 跳跃和射击
         function jump() {
             if (gameState === 'playing') {
-                bird.velocity = bird.jump;
-                createParticles(bird.x, bird.y, bird.color, 3);
+                if (currentMode === 'boss') {
+                    // Boss模式下：短按跳跃，长按射击
+                    bird.velocity = bird.jump;
+                    createParticles(bird.x, bird.y, bird.color, 3);
+                } else {
+                    // 其他模式正常跳跃
+                    bird.velocity = bird.jump;
+                    createParticles(bird.x, bird.y, bird.color, 3);
+                }
+            }
+        }
+        
+        function shootBird() {
+            if (currentMode === 'boss' && gameState === 'playing') {
+                birdBullets.push({
+                    x: bird.x + bird.width,
+                    y: bird.y + bird.height / 2,
+                    vx: 8,  // 向右发射
+                    vy: 0,
+                    size: 6,
+                    color: '#FFD700'
+                });
+                createParticles(bird.x + bird.width, bird.y + bird.height / 2, '#FFD700', 3);
             }
         }
         
@@ -440,14 +553,45 @@
         function update() {
             if (gameState !== 'playing') return;
             
+            // 游戏开始缓冲期间，小鸟悬浮不受重力影响
+            if (gameStartBuffer > 0) {
+                gameStartBuffer--;
+                // 在缓冲期间，小鸟轻微浮动效果
+                bird.y = canvas.height / 2 + Math.sin(Date.now() * 0.005) * 5;
+                return; // 不进行其他更新
+            }
+            
             // 更新小鸟
             bird.velocity += bird.gravity;
+            
+            // 限制最大下落速度，让玩家有反应时间
+            if (bird.velocity > bird.maxFallSpeed) {
+                bird.velocity = bird.maxFallSpeed;
+            }
+            // 增加向上的速度限制，但允许更强的跳跃
+            if (bird.velocity < -bird.maxFallSpeed * 2) {  // 允许向上速度达到下落速度的2倍
+                bird.velocity = -bird.maxFallSpeed * 2;
+            }
+            
+            // 添加速度阻尼，让运动更平滑
+            bird.velocity *= 0.98;
+            
             bird.y += bird.velocity;
             
-            // 边界检查
-            if (bird.y <= 0 || bird.y >= canvas.height - bird.height) {
-                gameOver();
-                return;
+            // 边界检查 - 扣除生命值
+            const groundHeight = 50; // 地面高度
+            if (bird.y <= 0 || bird.y + bird.height >= canvas.height - groundHeight) {
+                birdHealth--;
+                createParticles(bird.x + bird.width/2, bird.y + bird.height/2, '#FF0000', 8);
+                
+                // 重置小鸟位置，给一次缓冲机会
+                bird.y = canvas.height / 2;
+                bird.velocity = 0;
+                
+                if (birdHealth <= 0) {
+                    gameOver();
+                    return;
+                }
             }
             
             // 更新背景
@@ -456,8 +600,8 @@
             
             // 更新管道
             if (currentMode !== 'boss') {
-                // 创建新管道
-                if (pipes.length === 0 || pipes[pipes.length - 1].x < canvas.width - 300) {
+                // 创建新管道 - 增加间距
+                if (pipes.length === 0 || pipes[pipes.length - 1].x < canvas.width - 400) {  // 从300增加到400
                     createPipe();
                 }
                 
@@ -466,13 +610,26 @@
                     const pipe = pipes[i];
                     pipe.x -= gameSpeed;
                     
-                    // 碰撞检测
+                    // 碰撞检测 - 扣除生命值
                     if (bird.x + bird.width > pipe.x && 
                         bird.x < pipe.x + pipe.width) {
                         if (bird.y < pipe.topHeight || 
                             bird.y + bird.height > pipe.bottomY) {
-                            gameOver();
-                            return;
+                            birdHealth--;
+                            createParticles(bird.x + bird.width/2, bird.y + bird.height/2, '#FF0000', 8);
+                            
+                            // 推开小鸟，给一次缓冲机会
+                            if (bird.x + bird.width/2 < pipe.x + pipe.width/2) {
+                                bird.x = pipe.x - bird.width - 5; // 推到管道左边
+                            } else {
+                                bird.x = pipe.x + pipe.width + 5; // 推到管道右边
+                            }
+                            bird.velocity = 0;
+                            
+                            if (birdHealth <= 0) {
+                                gameOver();
+                                return;
+                            }
                         }
                     }
                     
@@ -491,53 +648,160 @@
             }
             
             // Boss模式更新
-            if (currentMode === 'boss' && boss) {
-                // Boss移动
-                boss.y += Math.sin(Date.now() * 0.005) * boss.moveSpeed;
-                boss.y = Math.max(50, Math.min(canvas.height - boss.height - 50, boss.y));
+            if (currentMode === 'boss') {
+                const currentTime = Date.now();
                 
-                // Boss射击
-                boss.shootTimer++;
-                if (boss.shootTimer >= 60) {
-                    boss.bullets.push({
-                        x: boss.x,
-                        y: boss.y + boss.height / 2,
-                        vx: -5,
-                        vy: 0,
-                        size: 8
-                    });
-                    boss.shootTimer = 0;
-                }
-                
-                // 更新子弹
-                for (let i = boss.bullets.length - 1; i >= 0; i--) {
-                    const bullet = boss.bullets[i];
-                    bullet.x += bullet.vx;
-                    bullet.y += bullet.vy;
-                    
-                    // 子弹与小鸟碰撞
-                    if (Math.abs(bullet.x - bird.x) < bird.width &&
-                        Math.abs(bullet.y - bird.y) < bird.height) {
-                        gameOver();
-                        return;
-                    }
-                    
-                    // 移除离开屏幕的子弹
-                    if (bullet.x < 0) {
-                        boss.bullets.splice(i, 1);
-                    }
-                }
-                
-                // 检查小鸟是否击中Boss（简化版，通过接近度）
-                if (Math.abs(bird.x - boss.x) < 60 && Math.abs(bird.y - boss.y) < 60) {
-                    boss.health--;
-                    createParticles(boss.x, boss.y, '#FF0000', 10);
-                    bird.x -= 20; // 推开小鸟
-                    
-                    if (boss.health <= 0) {
-                        score += 50;
+                // 简化的boss生成逻辑：如果没有boss就立即生成
+                if (!boss) {
+                    // 超时检查：如果超过5秒没有boss，强制重置
+                    if (lastBossTime > 0 && currentTime - lastBossTime > 5000) {
+                        console.log('Boss模式超时，强制重置');
+                        bossWave = 1;
                         boss = null;
-                        createParticles(canvas.width - 100, canvas.height / 2, '#FFD700', 30);
+                        birdBullets = [];
+                        gameState = 'playing';
+                    }
+                    
+                    createBoss();
+                    console.log('生成新Boss:', bossWave);
+                    lastBossTime = currentTime;
+                } else {
+                    // 更新最后有boss的时间
+                    lastBossTime = currentTime;
+                    
+                    // 小鸟自动射击
+                    bird.autoShootTimer++;
+                    if (bird.autoShootTimer >= 15) { // 从20减少到15，射击更频繁
+                        birdBullets.push({
+                            x: bird.x + bird.width,
+                            y: bird.y + bird.height / 2,
+                            vx: 8,
+                            vy: 0,
+                            size: 6,
+                            color: '#FFD700'
+                        });
+                        createParticles(bird.x + bird.width, bird.y + bird.height / 2, '#FFD700', 2);
+                        bird.autoShootTimer = 0;
+                    }
+                    
+                    // 更新小鸟子弹
+                    for (let i = birdBullets.length - 1; i >= 0; i--) {
+                        const bullet = birdBullets[i];
+                        bullet.x += bullet.vx;
+                        bullet.y += bullet.vy;
+                        
+                        // 小鸟子弹与Boss碰撞
+                        if (bullet.x > boss.x && bullet.x < boss.x + boss.width &&
+                            bullet.y > boss.y && bullet.y < boss.y + boss.height) {
+                            boss.health--;
+                            createParticles(boss.x + boss.width/2, boss.y + boss.height/2, '#FF0000', 10);
+                            birdBullets.splice(i, 1);
+                            
+                            if (boss.health <= 0) {
+                                // 简化击败逻辑 + 多重保险
+                                console.log('Boss被击败（近身攻击），准备下一波');
+                                score += 50 + (bossWave * 10);
+                                bossWave++;
+                                
+                                // 立即清除boss和所有子弹
+                                boss = null;
+                                birdBullets = [];
+                                
+                                // 强制确保游戏状态正常
+                                if (gameState !== 'playing') {
+                                    console.log('修复游戏状态');
+                                    gameState = 'playing';
+                                }
+                                
+                                createParticles(canvas.width - 100, canvas.height / 2, '#FFD700', 30);
+                                console.log('Boss击败处理完成，bossWave:', bossWave);
+                            }
+                            continue;
+                        }
+                        
+                        // 移除离开屏幕的子弹
+                        if (bullet.x > canvas.width) {
+                            birdBullets.splice(i, 1);
+                        }
+                    }
+                    
+                    // Boss移动
+                    boss.y += Math.sin(Date.now() * 0.005) * boss.moveSpeed;
+                    boss.y = Math.max(50, Math.min(canvas.height - boss.height - 50, boss.y));
+                    
+                    // Boss射击
+                    boss.shootTimer++;
+                    if (boss.shootTimer >= boss.shootInterval) {
+                        boss.bullets.push({
+                            x: boss.x,
+                            y: boss.y + boss.height / 2,
+                            vx: -3, // 从-5降低到-3，速度减慢40%
+                            vy: 0,
+                            size: 6  // 从8减小到6，子弹变小
+                        });
+                        boss.shootTimer = 0;
+                    }
+                    
+                    // 更新Boss子弹
+                    for (let i = boss.bullets.length - 1; i >= 0; i--) {
+                        const bullet = boss.bullets[i];
+                        bullet.x += bullet.vx;
+                        bullet.y += bullet.vy;
+                        
+                        // 子弹与小鸟碰撞 - 扣除生命值
+                        if (Math.abs(bullet.x - (bird.x + bird.width/2)) < bird.width/2 + 5 &&
+                            Math.abs(bullet.y - (bird.y + bird.height/2)) < bird.height/2 + 5) {
+                            birdHealth--;
+                            createParticles(bird.x + bird.width/2, bird.y + bird.height/2, '#FF0000', 8);
+                            boss.bullets.splice(i, 1);
+                            
+                            // 生命值为0才游戏结束
+                            if (birdHealth <= 0) {
+                                gameOver();
+                                return;
+                            }
+                            continue;
+                        }
+                        
+                        // 移除离开屏幕的子弹
+                        if (bullet.x < 0) {
+                            boss.bullets.splice(i, 1);
+                        }
+                    }
+                    
+                    // 近身攻击检查 - 扣除生命值
+                    if (Math.abs(bird.x - boss.x) < 60 && Math.abs(bird.y - boss.y) < 60) {
+                        boss.health--;
+                        createParticles(boss.x, boss.y, '#FF0000', 10);
+                        birdHealth--; // 近身攻击也会受伤
+                        bird.x -= 20; // 推开小鸟
+                        
+                        createParticles(bird.x, bird.y, '#FF0000', 5);
+                        
+                        if (boss.health <= 0) {
+                            // 简化击败逻辑 + 多重保险
+                            console.log('Boss被击败（近身攻击），准备下一波');
+                            score += 50 + (bossWave * 10);
+                            bossWave++;
+                            
+                            // 立即清除boss和所有子弹
+                            boss = null;
+                            birdBullets = [];
+                            
+                            // 强制确保游戏状态正常
+                            if (gameState !== 'playing') {
+                                console.log('修复游戏状态');
+                                gameState = 'playing';
+                            }
+                            
+                            createParticles(canvas.width - 100, canvas.height / 2, '#FFD700', 30);
+                            console.log('Boss击败处理完成，bossWave:', bossWave);
+                        }
+                        
+                        if (birdHealth <= 0) {
+                            gameOver();
+                            return;
+                        }
                     }
                 }
             }
@@ -609,7 +873,7 @@
                 // Boss眼睛
                 ctx.fillStyle = '#FF0000';
                 ctx.fillRect(boss.x + 10, boss.y + 15, 15, 15);
-                ctx.fillRect(boss.x + 55, boss.y + 15, 15, 15);
+                ctx.fillRect(boss.x + boss.width - 25, boss.y + 15, 15, 15);
                 
                 // 血条
                 const barWidth = 100;
@@ -622,13 +886,42 @@
                 ctx.fillStyle = '#00FF00';
                 ctx.fillRect(barX, barY, (boss.health / boss.maxHealth) * barWidth, barHeight);
                 
+                // Boss等级显示
+                ctx.fillStyle = '#FFFFFF';
+                ctx.font = 'bold 16px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(`Boss Lv.${boss.wave}`, boss.x + boss.width/2, boss.y - 30);
+                
                 // Boss子弹
                 ctx.fillStyle = '#FF4500';
                 boss.bullets.forEach(bullet => {
+                    // 绘制子弹预警轨迹
+                    ctx.fillStyle = 'rgba(255, 69, 0, 0.3)';
+                    ctx.fillRect(bullet.x - 30, bullet.y - 2, 30, 4);
+                    
+                    // 绘制子弹本体
+                    ctx.fillStyle = '#FF4500';
                     ctx.beginPath();
                     ctx.arc(bullet.x, bullet.y, bullet.size, 0, Math.PI * 2);
                     ctx.fill();
                 });
+            }
+            
+            // Boss模式特殊显示
+            if (currentMode === 'boss') {
+                // 显示当前波次
+                ctx.save();
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                ctx.font = 'bold 24px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(`第 ${bossWave} 波`, canvas.width / 2, 40);
+                
+                // 简化的状态显示
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+                ctx.font = '12px Arial';
+                ctx.fillText(`Boss状态: ${boss ? `生命值 ${boss.health}/${boss.maxHealth}` : '生成中...'}`, canvas.width / 2, 60);
+                
+                ctx.restore();
             }
             
             // 绘制小鸟
@@ -646,6 +939,23 @@
             ctx.fillStyle = '#FFB347';
             ctx.fillRect(bird.x + 5, bird.y + 12 + wingOffset, 15, 8);
             
+            // 绘制小鸟子弹（boss模式）
+            if (currentMode === 'boss') {
+                ctx.fillStyle = '#FFD700';
+                birdBullets.forEach(bullet => {
+                    ctx.beginPath();
+                    ctx.arc(bullet.x, bullet.y, bullet.size, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // 子弹尾迹效果
+                    ctx.fillStyle = 'rgba(255, 215, 0, 0.5)';
+                    ctx.beginPath();
+                    ctx.arc(bullet.x - 10, bullet.y, bullet.size * 0.7, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#FFD700';
+                });
+            }
+            
             // 绘制粒子
             particles.forEach(particle => {
                 ctx.globalAlpha = particle.life / 30;
@@ -655,6 +965,39 @@
                 ctx.fill();
             });
             ctx.globalAlpha = 1;
+            
+            // 绘制倒计时（在缓冲期间）
+            if (gameStartBuffer > 0) {
+                const countdown = Math.ceil(gameStartBuffer / 60);
+                if (countdown > 0) {
+                    ctx.save();
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                    ctx.font = 'bold 72px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.strokeStyle = '#000000';
+                    ctx.lineWidth = 3;
+                    ctx.strokeText(`${countdown}`, canvas.width / 2, canvas.height / 2);
+                    ctx.fillText(`${countdown}`, canvas.width / 2, canvas.height / 2);
+                    
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                    ctx.font = 'bold 28px Arial';
+                    ctx.strokeText('准备开始！', canvas.width / 2, canvas.height / 2 + 80);
+                    ctx.fillText('准备开始！', canvas.width / 2, canvas.height / 2 + 80);
+                    
+                    // Boss模式提示
+                    if (currentMode === 'boss') {
+                        ctx.font = 'bold 20px Arial';
+                        ctx.fillStyle = 'rgba(255, 255, 0, 0.9)';
+                        ctx.strokeText('点击跳跃 | 自动射击', canvas.width / 2, canvas.height / 2 + 120);
+                        ctx.fillText('点击跳跃 | 自动射击', canvas.width / 2, canvas.height / 2 + 120);
+                    }
+                    
+                    ctx.restore();
+                }
+            }
         }
         
         // 绘制云朵
@@ -668,10 +1011,28 @@
         
         // 游戏主循环
         function gameLoop() {
-            if (gameState === 'playing') {
-                update();
-                render();
-                requestAnimationFrame(gameLoop);
+            try {
+                isGameLoopRunning = true;
+                
+                if (gameState === 'playing') {
+                    update();
+                    render();
+                } else {
+                    console.log('游戏状态异常:', gameState);
+                    // 强制恢复playing状态
+                    if (gameState !== 'start' && gameState !== 'paused' && gameState !== 'gameOver') {
+                        console.log('强制恢复playing状态');
+                        gameState = 'playing';
+                    }
+                }
+            } catch (error) {
+                console.error('游戏循环错误:', error);
+                // 发生错误也继续运行
+            }
+            
+            // 只在游戏运行状态下继续循环
+            if (isGameLoopRunning && (gameState === 'playing' || gameState === 'paused')) {
+                gameAnimationFrame = requestAnimationFrame(gameLoop);
             }
         }
         
@@ -691,6 +1052,20 @@
             } else if (e.code === 'KeyP' && gameState === 'playing') {
                 gameState = 'paused';
                 document.getElementById('pauseScreen').style.display = 'block';
+            } else if (e.code === 'KeyQ' && gameState === 'playing' && currentMode === 'boss') {
+                // Q键射击（boss模式）
+                if (shootTimer <= 0) {
+                    shootBird();
+                    shootTimer = 10; // 射击间隔
+                }
+            } else if (e.code === 'KeyB' && currentMode === 'boss') {
+                // B键强制生成Boss（调试用）
+                console.log('强制生成Boss - 按键触发');
+                if (!boss) {
+                    createBoss();
+                } else {
+                    console.log('Boss已存在，无需生成');
+                }
             }
         });
         
@@ -720,6 +1095,9 @@
                 e.preventDefault();
             }
         });
+        
+        // 页面卸载时清理资源
+        window.addEventListener('beforeunload', cleanupGame);
         
         // 初始化
         updateUI();
