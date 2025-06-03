@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - FlapPy Bird</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .pixel-font {
+            font-family: 'Courier New', 'Monaco', monospace;
+            font-weight: bold;
+        }
+        
+        .login-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 3rem;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        
+        .header .icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            animation: bounce 2s infinite;
+        }
+        
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .header h1 {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .header p {
+            opacity: 0.8;
+            font-size: 0.9rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+            color: #e5e7eb;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+        
+        .form-input:focus {
+            outline: none;
+            border-color: #60a5fa;
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 0 20px rgba(96, 165, 250, 0.3);
+        }
+        
+        .form-input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+        
+        .btn {
+            padding: 1rem 1.5rem;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(45deg, #3b82f6, #1d4ed8);
+            color: white;
+            width: 100%;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(59, 130, 246, 0.3);
+        }
+        
+        .btn-link {
+            background: transparent;
+            color: #93c5fd;
+            border: 1px solid rgba(147, 197, 253, 0.3);
+            width: 100%;
+            margin-top: 1rem;
+        }
+        
+        .btn-link:hover {
+            background: rgba(147, 197, 253, 0.1);
+            border-color: #93c5fd;
+        }
+        
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .error-message {
+            background: rgba(239, 68, 68, 0.2);
+            border: 1px solid rgba(239, 68, 68, 0.5);
+            color: #fca5a5;
+            padding: 0.8rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            display: none;
+        }
+        
+        .success-message {
+            background: rgba(34, 197, 94, 0.2);
+            border: 1px solid rgba(34, 197, 94, 0.5);
+            color: #86efac;
+            padding: 0.8rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            display: none;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .nav-links {
+            text-align: center;
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .nav-links a {
+            color: #93c5fd;
+            text-decoration: none;
+            margin: 0 1rem;
+            font-size: 0.9rem;
+            transition: color 0.3s ease;
+        }
+        
+        .nav-links a:hover {
+            color: white;
+        }
+        
+        .form-tips {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 1.5rem;
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 480px) {
+            .login-container {
+                padding: 2rem;
+                max-width: 95%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <!-- 头部 -->
+        <div class="header">
+            <div class="icon">🐦</div>
+            <h1 class="pixel-font">欢迎回来</h1>
+            <p>登录FlapPy Bird，继续你的飞行冒险</p>
+        </div>
+
+        <!-- 错误和成功消息 -->
+        <div id="errorMessage" class="error-message"></div>
+        <div id="successMessage" class="success-message"></div>
+
+        <!-- 登录表单 -->
+        <form id="loginForm">
+            <!-- 用户名/手机号 -->
+            <div class="form-group">
+                <label for="loginId" class="form-label">👤 用户名/手机号</label>
+                <input type="text" id="loginId" class="form-input" placeholder="请输入用户名或手机号" required>
+            </div>
+
+            <!-- 密码 -->
+            <div class="form-group">
+                <label for="password" class="form-label">🔐 密码</label>
+                <input type="password" id="password" class="form-input" placeholder="请输入密码" required>
+            </div>
+
+            <!-- 登录按钮 -->
+            <button type="submit" id="loginBtn" class="btn btn-primary">
+                <span id="loginText">🚀 立即登录</span>
+            </button>
+
+            <!-- 注册链接 -->
+            <a href="/register.html" class="btn btn-link">
+                还没有账号？立即注册
+            </a>
+        </form>
+
+        <!-- 导航链接 -->
+        <div class="nav-links">
+            <a href="/">🏠 返回首页</a>
+            <a href="/about.html">📖 关于我们</a>
+            <a href="/game.html">🎮 立即游戏</a>
+        </div>
+    </div>
+
+    <script>
+        // DOM 元素
+        const form = document.getElementById('loginForm');
+        const loginIdInput = document.getElementById('loginId');
+        const passwordInput = document.getElementById('password');
+        const loginBtn = document.getElementById('loginBtn');
+        const errorMessage = document.getElementById('errorMessage');
+        const successMessage = document.getElementById('successMessage');
+
+        // 显示错误消息
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            successMessage.style.display = 'none';
+        }
+
+        // 显示成功消息
+        function showSuccess(message) {
+            successMessage.textContent = message;
+            successMessage.style.display = 'block';
+            errorMessage.style.display = 'none';
+        }
+
+        // 隐藏消息
+        function hideMessages() {
+            errorMessage.style.display = 'none';
+            successMessage.style.display = 'none';
+        }
+
+        // 提交登录表单
+        async function submitLogin(event) {
+            event.preventDefault();
+            hideMessages();
+
+            const loginId = loginIdInput.value.trim();
+            const password = passwordInput.value;
+
+            // 基本验证
+            if (!loginId) {
+                showError('请输入用户名或手机号');
+                return;
+            }
+
+            if (!password) {
+                showError('请输入密码');
+                return;
+            }
+
+            try {
+                loginBtn.disabled = true;
+                document.getElementById('loginText').innerHTML = '<span class="loading"></span> 登录中...';
+
+                const response = await fetch('/api/users/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        login_id: loginId,
+                        password: password
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    // 保存用户信息到localStorage
+                    localStorage.setItem('userToken', data.token);
+                    localStorage.setItem('userInfo', JSON.stringify(data.user));
+                    
+                    showSuccess('登录成功！正在跳转...');
+                    
+                    // 跳转到首页或指定页面
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const redirectTo = urlParams.get('redirect') || '/';
+                    
+                    setTimeout(() => {
+                        window.location.href = redirectTo;
+                    }, 1500);
+                } else {
+                    showError(data.message || '登录失败，请检查用户名和密码');
+                    loginBtn.disabled = false;
+                    document.getElementById('loginText').textContent = '🚀 立即登录';
+                }
+            } catch (error) {
+                showError('网络错误，请检查网络连接');
+                loginBtn.disabled = false;
+                document.getElementById('loginText').textContent = '🚀 立即登录';
+            }
+        }
+
+        // 事件监听器
+        form.addEventListener('submit', submitLogin);
+
+        // 页面加载完成后的初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            // 检查URL参数中是否有消息
+            const urlParams = new URLSearchParams(window.location.search);
+            const message = urlParams.get('message');
+            if (message) {
+                showSuccess(decodeURIComponent(message));
+            }
+
+            // 检查是否已经登录
+            const userToken = localStorage.getItem('userToken');
+            if (userToken) {
+                // 可以选择自动跳转或显示提示
+                showSuccess('您已登录，正在跳转...');
+                setTimeout(() => {
+                    window.location.href = '/';
+                }, 1500);
+            }
+        });
+
+        // 回车键快捷登录
+        document.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !loginBtn.disabled) {
+                form.dispatchEvent(new Event('submit'));
+            }
+        });
+    </script>
+</body>
+</html> 

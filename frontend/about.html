@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>关于 FlapPy Bird - 增强版飞鸟游戏</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: white;
+        }
+        
+        .pixel-font {
+            font-family: 'Courier New', 'Monaco', monospace;
+            font-weight: bold;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+        
+        /* 导航栏 */
+        .nav {
+            padding: 1rem 0;
+            background: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+        }
+        
+        .nav-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+        
+        .nav-menu {
+            display: flex;
+            gap: 1rem;
+        }
+        
+        .nav-link {
+            color: white;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 0.5rem;
+            transition: background-color 0.3s;
+        }
+        
+        .nav-link:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        /* 主要内容 */
+        .main-content {
+            padding: 3rem 0;
+        }
+        
+        .hero {
+            text-align: center;
+            margin-bottom: 4rem;
+        }
+        
+        .hero-bird {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        .hero h1 {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        .hero p {
+            font-size: 1.25rem;
+            max-width: 800px;
+            margin: 0 auto;
+            line-height: 1.6;
+            opacity: 0.9;
+        }
+        
+        /* 内容卡片 */
+        .content-section {
+            margin-bottom: 3rem;
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 1rem;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .card h2 {
+            font-size: 1.8rem;
+            margin-bottom: 1rem;
+            color: #fbbf24;
+        }
+        
+        .card h3 {
+            font-size: 1.4rem;
+            margin-bottom: 0.8rem;
+            color: #93c5fd;
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+        
+        .feature-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1.5rem;
+            border-radius: 0.8rem;
+            border-left: 4px solid #10b981;
+        }
+        
+        .feature-item h4 {
+            color: #34d399;
+            margin-bottom: 0.5rem;
+        }
+        
+        .tech-stack {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        
+        .tech-item {
+            background: rgba(255, 255, 255, 0.08);
+            padding: 1rem;
+            border-radius: 0.5rem;
+            text-align: center;
+        }
+        
+        .tech-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        
+        .stat-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1.5rem;
+            border-radius: 0.8rem;
+            text-align: center;
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #fbbf24;
+            display: block;
+        }
+        
+        .timeline {
+            position: relative;
+            margin-top: 2rem;
+        }
+        
+        .timeline-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1.5rem;
+            border-radius: 0.8rem;
+            margin-bottom: 1rem;
+            border-left: 4px solid #8b5cf6;
+        }
+        
+        .timeline-date {
+            color: #c084fc;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.8rem 1.5rem;
+            background: #3b82f6;
+            color: white;
+            text-decoration: none;
+            border-radius: 0.5rem;
+            transition: background-color 0.3s;
+            margin: 0.25rem;
+        }
+        
+        .btn:hover {
+            background: #2563eb;
+        }
+        
+        .btn-success {
+            background: #10b981;
+        }
+        
+        .btn-success:hover {
+            background: #059669;
+        }
+        
+        .btn-warning {
+            background: #f59e0b;
+        }
+        
+        .btn-warning:hover {
+            background: #d97706;
+        }
+        
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2rem;
+            }
+            
+            .nav-menu {
+                display: none;
+            }
+            
+            .card {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="nav">
+        <div class="container">
+            <div class="nav-content">
+                <div class="nav-brand">
+                    <span>🐦</span>
+                    <span class="pixel-font">FlapPy Bird</span>
+                </div>
+                <div class="nav-menu">
+                    <a href="/" class="nav-link">🏠 首页</a>
+                    <a href="/game.html" class="nav-link">🎮 游戏</a>
+                    <a href="/test_download.html" class="nav-link">📦 下载</a>
+                    <a href="/register.html" class="nav-link">📝 注册</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- 主要内容 -->
+    <div class="container main-content">
+        <!-- 英雄区域 -->
+        <div class="hero">
+            <div class="hero-bird">🐦</div>
+            <h1 class="pixel-font">关于 FlapPy Bird</h1>
+            <p>
+                一个基于经典Flappy Bird的全新增强版游戏，融合了现代游戏设计理念，
+                提供四种不同游戏模式、完整的Boss战斗系统，以及跨平台的游戏体验。
+            </p>
+        </div>
+
+        <!-- 项目简介 -->
+        <div class="content-section">
+            <div class="card">
+                <h2>🎮 项目简介</h2>
+                <p style="margin-bottom: 1.5rem;">
+                    FlapPy Bird增强版是对经典Flappy Bird游戏的全面升级。我们在保留原版游戏核心玩法的基础上，
+                    增加了丰富的游戏模式、现代化的用户界面、完整的武器系统和激动人心的Boss战斗。
+                </p>
+                
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-number">4</span>
+                        <div>游戏模式</div>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">4</span>
+                        <div>Boss类型</div>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">4</span>
+                        <div>武器系统</div>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">3</span>
+                        <div>平台支持</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 核心特性 -->
+        <div class="content-section">
+            <div class="card">
+                <h2>✨ 核心特性</h2>
+                <div class="feature-grid">
+                    <div class="feature-item">
+                        <h4>🎯 四种游戏模式</h4>
+                        <p>经典模式、限时挑战、反向模式、Boss战斗 - 每种模式都带来独特的游戏体验</p>
+                    </div>
+                    <div class="feature-item">
+                        <h4>🛡️ Boss战斗系统</h4>
+                        <p>四种不同类型的Boss，每个都有独特的攻击模式和视觉效果</p>
+                    </div>
+                    <div class="feature-item">
+                        <h4>⚔️ 武器系统</h4>
+                        <p>基础子弹、三连发、激光、追踪导弹 - 策略性地选择武器对抗Boss</p>
+                    </div>
+                    <div class="feature-item">
+                        <h4>🌐 跨平台支持</h4>
+                        <p>支持Windows桌面版、Web版，以及移动设备触摸控制</p>
+                    </div>
+                    <div class="feature-item">
+                        <h4>💫 视觉特效</h4>
+                        <p>粒子系统、平滑动画、战斗特效让游戏更加生动</p>
+                    </div>
+                    <div class="feature-item">
+                        <h4>👥 用户系统</h4>
+                        <p>注册登录、分数同步、排行榜功能完善的社交体验</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 技术架构 -->
+        <div class="content-section">
+            <div class="card">
+                <h2>🔧 技术架构</h2>
+                <h3>游戏引擎</h3>
+                <div class="tech-stack">
+                    <div class="tech-item">
+                        <div class="tech-icon">🐍</div>
+                        <h4>Python + Pygame</h4>
+                        <p>核心游戏逻辑</p>
+                    </div>
+                    <div class="tech-item">
+                        <div class="tech-icon">🌐</div>
+                        <h4>HTML5 Canvas</h4>
+                        <p>Web版游戏渲染</p>
+                    </div>
+                    <div class="tech-item">
+                        <div class="tech-icon">📱</div>
+                        <h4>触摸适配</h4>
+                        <p>移动设备支持</p>
+                    </div>
+                </div>
+
+                <h3 style="margin-top: 2rem;">后端服务</h3>
+                <div class="tech-stack">
+                    <div class="tech-item">
+                        <div class="tech-icon">⚡</div>
+                        <h4>Python HTTP服务器</h4>
+                        <p>轻量级API服务</p>
+                    </div>
+                    <div class="tech-item">
+                        <div class="tech-icon">📊</div>
+                        <h4>JSON数据存储</h4>
+                        <p>用户数据和统计</p>
+                    </div>
+                    <div class="tech-item">
+                        <div class="tech-icon">🔐</div>
+                        <h4>用户认证</h4>
+                        <p>安全的登录系统</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 开发历程 -->
+        <div class="content-section">
+            <div class="card">
+                <h2>📈 开发历程</h2>
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-date">2024年12月 - v1.2.0</div>
+                        <h4>🚀 全面架构升级</h4>
+                        <p>Web版开发、用户系统、短信验证注册、下载功能完善</p>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">2024年11月 - v1.1.0</div>
+                        <h4>⚔️ Boss战斗系统</h4>
+                        <p>添加四种Boss类型、武器系统、战斗特效和平衡性调整</p>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">2024年10月 - v1.0.0</div>
+                        <h4>🎮 核心游戏完成</h4>
+                        <p>四种游戏模式、基础UI系统、粒子特效系统</p>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="timeline-date">2024年9月 - v0.1.0</div>
+                        <h4>🐦 项目启动</h4>
+                        <p>基于pygame重构经典Flappy Bird，添加现代化功能</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 团队信息 -->
+        <div class="content-section">
+            <div class="card">
+                <h2>👨‍💻 开发团队</h2>
+                <p style="margin-bottom: 1.5rem;">
+                    本项目由游戏开发爱好者团队开发，致力于为经典游戏注入新的活力，
+                    同时探索现代游戏开发技术的应用。
+                </p>
+                
+                <h3>🎯 开发理念</h3>
+                <ul style="list-style: none; padding: 0; margin-top: 1rem;">
+                    <li style="margin-bottom: 0.5rem;">🎮 <strong>创新而不失经典</strong> - 在保持原版魅力的基础上添加新功能</li>
+                    <li style="margin-bottom: 0.5rem;">🌐 <strong>跨平台兼容</strong> - 让更多玩家能够享受游戏乐趣</li>
+                    <li style="margin-bottom: 0.5rem;">🔓 <strong>开源共享</strong> - 与社区分享代码和经验</li>
+                    <li style="margin-bottom: 0.5rem;">⚡ <strong>性能优化</strong> - 确保流畅的游戏体验</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- 行动按钮 -->
+        <div class="content-section">
+            <div class="card" style="text-align: center;">
+                <h2>🚀 立即体验</h2>
+                <p style="margin-bottom: 2rem;">
+                    准备好挑战你的反应极限了吗？选择你喜欢的方式开始游戏！
+                </p>
+                
+                <div>
+                    <a href="/game.html" class="btn btn-success">
+                        <span>🎮</span>
+                        <span class="pixel-font">立即游戏</span>
+                    </a>
+                    <a href="/test_download.html" class="btn btn-warning">
+                        <span>📦</span>
+                        <span class="pixel-font">下载游戏</span>
+                    </a>
+                    <a href="/register.html" class="btn">
+                        <span>📝</span>
+                        <span class="pixel-font">注册账号</span>
+                    </a>
+                    <a href="/" class="btn">
+                        <span>🏠</span>
+                        <span class="pixel-font">返回首页</span>
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 开源信息 -->
+        <div class="content-section">
+            <div class="card" style="text-align: center; background: rgba(255, 255, 255, 0.08);">
+                <h3>🔓 开源项目</h3>
+                <p style="margin-bottom: 1rem;">
+                    本项目基于pygame开发，完全开源。感谢原始Flappy Bird的创意！
+                </p>
+                <div style="font-size: 0.9rem; color: #d1d5db;">
+                    Version 1.2.0 | 支持Windows、Web、移动端 | 更新时间: 2024-12-19
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 简单的平滑滚动效果
+        document.querySelectorAll('a[href^="/"]:not([href="/"])')
+            .forEach(link => {
+                link.addEventListener('click', function(e) {
+                    // 这里可以添加页面转换动画
+                });
+            });
+
+        // 鸟儿飞行动画的随机变化
+        const bird = document.querySelector('.hero-bird');
+        setInterval(() => {
+            const randomDelay = Math.random() * 2000;
+            bird.style.animationDelay = randomDelay + 'ms';
+        }, 5000);
+    </script>
+</body>
+</html> 
