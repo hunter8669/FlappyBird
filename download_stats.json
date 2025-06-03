@@ -1,0 +1,44 @@
+{
+  "downloads": [
+    {
+      "timestamp": "2025-06-03T05:45:11.301269",
+      "type": "source",
+      "version": "1.2.0"
+    },
+    {
+      "timestamp": "2025-06-03T05:45:37.960815",
+      "type": "source",
+      "version": "1.2.0"
+    },
+    {
+      "timestamp": "2025-06-03T05:46:09.401387",
+      "type": "exe",
+      "version": "1.2.0"
+    },
+    {
+      "timestamp": "2025-06-03T06:02:04.292632",
+      "type": "source",
+      "version": "1.2.0"
+    },
+    {
+      "timestamp": "2025-06-03T06:02:09.397108",
+      "type": "source",
+      "version": "1.2.0"
+    },
+    {
+      "timestamp": "2025-06-03T06:02:39.272788",
+      "type": "source",
+      "version": "1.2.0"
+    },
+    {
+      "timestamp": "2025-06-03T06:03:30.846895",
+      "type": "source",
+      "version": "1.2.0"
+    },
+    {
+      "timestamp": "2025-06-03T06:03:34.194862",
+      "type": "exe",
+      "version": "1.2.0"
+    }
+  ]
+}
