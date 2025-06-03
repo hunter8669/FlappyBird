@@ -1,101 +1,85 @@
 {
-  "users": {
-    "admin": {
-      "id": "a8f4321c-11e5-41b9-83e9-e5f962a47dc0",
-      "username": "admin",
-      "email": "admin@example.com",
-      "password": "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9",
-      "created_at": "2025-05-30T01:26:49.983829",
-      "last_login": null,
-      "login_count": 0,
-      "total_score": 245,
-      "best_score": 120,
-      "games_played": 3,
-      "total_playtime": 540,
-      "achievements": [
-        "高分达人"
-      ],
-      "status": "active"
-    },
-    "testuser": {
-      "id": "2ee5e0cb-f966-48c0-b74e-07c42557ef91",
-      "username": "testuser",
-      "email": "test@example.com",
-      "password": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
-      "created_at": "2025-05-30T01:26:49.987807",
-      "last_login": null,
-      "login_count": 0,
-      "total_score": 245,
-      "best_score": 120,
-      "games_played": 3,
-      "total_playtime": 540,
-      "achievements": [
-        "高分达人"
-      ],
-      "status": "active"
-    },
-    "gamer": {
-      "id": "47d23ae1-6c8e-4435-ae3f-f37c9d9f28b2",
-      "username": "gamer",
-      "email": "gamer@example.com",
-      "password": "5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8",
-      "created_at": "2025-05-30T01:26:49.990805",
-      "last_login": null,
-      "login_count": 0,
-      "total_score": 245,
-      "best_score": 120,
-      "games_played": 3,
-      "total_playtime": 540,
-      "achievements": [
-        "高分达人"
-      ],
-      "status": "active"
-    },
-    "赏金猎人01": {
-      "id": "7a310c35-6d63-43a0-b2a3-2894505d0750",
-      "username": "赏金猎人01",
-      "email": "1578448407@qq.com",
-      "password": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
-      "created_at": "2025-05-30T01:28:19.002336",
-      "last_login": "2025-05-30T01:28:32.364505",
-      "login_count": 1,
-      "total_score": 0,
-      "best_score": 0,
-      "games_played": 0,
-      "total_playtime": 0,
-      "achievements": [],
-      "status": "active"
-    },
-    "YJH": {
-      "id": "839bf496-5cc1-4ef1-9741-05312f2f269f",
-      "username": "YJH",
-      "email": "666666",
-      "password": "94edf28c6d6da38fd35d7ad53e485307f89fbeaf120485c8d17a43f323deee71",
-      "created_at": "2025-05-30T01:49:07.873749",
-      "last_login": "2025-05-30T21:25:59.431656",
-      "login_count": 6,
-      "total_score": 67,
-      "best_score": 33,
-      "games_played": 8,
-      "total_playtime": 107263,
-      "achievements": [],
-      "status": "active"
-    },
-    "小黑子": {
-      "id": "fe2f5523-15e9-47c0-85f5-b16a22db6372",
-      "username": "小黑子",
-      "email": "25@qq.com",
-      "password": "4cc8f4d609b717356701c57a03e737e5ac8fe885da8c7163d3de47e01849c635",
-      "created_at": "2025-06-02T19:45:03.649336",
-      "last_login": "2025-06-02T19:45:15.251941",
-      "login_count": 1,
-      "total_score": 61,
-      "best_score": 60,
-      "games_played": 7,
-      "total_playtime": 30,
-      "achievements": [],
-      "status": "active"
-    }
+  "0f44ba79333d9c6854df9c48dee4266a": {
+    "user_id": "0f44ba79333d9c6854df9c48dee4266a",
+    "username": "测试用户1",
+    "phone": "13800000001",
+    "email": "user1@test.com",
+    "password_hash": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
+    "created_at": "2025-05-14T20:43:35.951140",
+    "last_login": "2025-05-31T20:43:35.951140",
+    "best_score": 168,
+    "total_score": 1335,
+    "games_played": 15,
+    "is_active": true,
+    "created_by": "test"
   },
-  "total_users": 6
+  "78f88e816eaad9b5feebac85957fcc34": {
+    "user_id": "78f88e816eaad9b5feebac85957fcc34",
+    "username": "游戏高手",
+    "phone": "13800000002",
+    "email": "master@test.com",
+    "password_hash": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
+    "created_at": "2025-05-04T20:43:35.951140",
+    "last_login": "2025-05-29T20:43:35.951140",
+    "best_score": 41,
+    "total_score": 592,
+    "games_played": 16,
+    "is_active": true,
+    "created_by": "test"
+  },
+  "58d5aa97e5c0da1d64a361df336a1c7e": {
+    "user_id": "58d5aa97e5c0da1d64a361df336a1c7e",
+    "username": "新手玩家",
+    "phone": "13800000003",
+    "email": "newbie@test.com",
+    "password_hash": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
+    "created_at": "2025-06-01T20:43:35.951140",
+    "last_login": "2025-06-03T20:43:35.951140",
+    "best_score": 66,
+    "total_score": 112,
+    "games_played": 7,
+    "is_active": true,
+    "created_by": "test"
+  },
+  "e6420df6e3d7443258340c6546f3a505": {
+    "user_id": "e6420df6e3d7443258340c6546f3a505",
+    "username": "飞鸟达人",
+    "phone": "13800000004",
+    "email": "bird@test.com",
+    "password_hash": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
+    "created_at": "2025-05-18T20:43:35.951140",
+    "last_login": "2025-05-30T20:43:35.951140",
+    "best_score": 19,
+    "total_score": 143,
+    "games_played": 11,
+    "is_active": true,
+    "created_by": "test"
+  },
+  "7c6cdc1ec20d9525e8b6bc6cfad684fe": {
+    "user_id": "7c6cdc1ec20d9525e8b6bc6cfad684fe",
+    "username": "挑战者",
+    "phone": "13800000005",
+    "email": "challenger@test.com",
+    "password_hash": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
+    "created_at": "2025-05-18T20:43:35.951140",
+    "last_login": "2025-06-03T20:51:36.295187",
+    "best_score": 53,
+    "total_score": 350,
+    "games_played": 14,
+    "is_active": true,
+    "created_by": "test"
+  },
+  "fda8a3d4ba2a659aff9ed245caf3d121": {
+    "user_id": "fda8a3d4ba2a659aff9ed245caf3d121",
+    "username": "admin",
+    "phone": "18686634769",
+    "email": null,
+    "password_hash": "8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92",
+    "created_at": "2025-06-03T20:53:01.013321",
+    "last_login": "2025-06-03T22:46:45.967100",
+    "best_score": 0,
+    "total_score": 0,
+    "games_played": 0,
+    "is_active": true
+  }
 }

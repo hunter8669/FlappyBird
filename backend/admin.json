@@ -1,0 +1,45 @@
+{
+  "admin": {
+    "username": "admin",
+    "password_hash": "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9",
+    "email": "admin@flappybird.com",
+    "role": "super_admin",
+    "created_at": "2025-06-03T18:37:05.792376",
+    "last_login": "2025-06-03T22:46:08.792494",
+    "is_active": true,
+    "permissions": [
+      "user_management",
+      "system_management",
+      "data_management",
+      "admin_management"
+    ]
+  },
+  "ed390230dcb375fdcc9177f662de26b1": {
+    "username": "admin1",
+    "password_hash": "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9",
+    "email": "",
+    "role": "admin",
+    "created_at": "2025-06-03T21:36:49.177086",
+    "last_login": "2025-06-03T22:18:52.503931",
+    "is_active": true,
+    "permissions": [
+      "user_management",
+      "data_management"
+    ],
+    "created_by": "admin"
+  },
+  "c5f895f6d42b7ae77d310db30361cded": {
+    "username": "admin2",
+    "password_hash": "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9",
+    "email": "",
+    "role": "admin",
+    "created_at": "2025-06-03T22:19:27.363364",
+    "last_login": null,
+    "is_active": true,
+    "permissions": [
+      "user_management",
+      "data_management"
+    ],
+    "created_by": "admin"
+  }
+}

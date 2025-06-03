@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>用户管理 - FlapPy Bird 管理控制台</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="/css/admin.css" rel="stylesheet">
+</head>
+<body>
+    <!-- 侧边导航栏 -->
+    <nav class="admin-sidebar">
+        <div class="sidebar-header">
+            <h2><i class="fas fa-gamepad"></i> 管理控制台</h2>
+            <p>FlapPy Bird</p>
+        </div>
+        <div class="sidebar-nav">
+            <a href="/admin_dashboard.html" class="nav-item">
+                <i class="fas fa-tachometer-alt"></i> 系统概览
+            </a>
+            <a href="/admin_users.html" class="nav-item active">
+                <i class="fas fa-users"></i> 用户管理
+            </a>
+            <a href="/admin_frontend.html" class="nav-item">
+                <i class="fas fa-palette"></i> 前端管理
+            </a>
+            <a href="/admin_admins.html" class="nav-item">
+                <i class="fas fa-user-shield"></i> 管理员管理
+            </a>
+            <a href="/admin_system.html" class="nav-item">
+                <i class="fas fa-cogs"></i> 系统设置
+            </a>
+            <a href="/admin_logs.html" class="nav-item">
+                <i class="fas fa-file-alt"></i> 系统日志
+            </a>
+        </div>
+    </nav>
+
+    <!-- 主内容区域 -->
+    <main class="admin-main">
+        <!-- 顶部栏 -->
+        <header class="admin-header">
+            <div class="header-left">
+                <button class="toggle-sidebar">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h1 class="header-title">用户管理</h1>
+            </div>
+            <div class="header-right">
+                <div class="admin-user">
+                    <i class="fas fa-user-shield"></i>
+                    <span>加载中...</span>
+                </div>
+                <button class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i> 登出
+                </button>
+            </div>
+        </header>
+
+        <!-- 统计概览 -->
+        <div class="stats-grid" id="userStatsGrid">
+            <div class="stat-card">
+                <i class="fas fa-spinner fa-spin stat-icon" style="color: #3b82f6;"></i>
+                <div class="stat-number">...</div>
+                <div class="stat-label">加载用户统计中</div>
+            </div>
+        </div>
+
+        <!-- 用户管理功能 -->
+        <div class="content-section">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i class="fas fa-users"></i> 用户列表
+                </h2>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-success" onclick="showCreateUserModal()">
+                        <i class="fas fa-user-plus"></i> 创建用户
+                    </button>
+                    <button class="btn btn-info" onclick="exportUsers()">
+                        <i class="fas fa-download"></i> 导出数据
+                    </button>
+                    <button class="btn btn-secondary" onclick="refreshUsers()">
+                        <i class="fas fa-sync-alt"></i> 刷新
+                    </button>
+                </div>
+            </div>
+
+            <!-- 搜索和过滤 -->
+            <div class="search-bar">
+                <input type="text" id="searchInput" class="search-input" placeholder="搜索用户名、手机号、邮箱..." onkeyup="debouncedSearch()">
+                <select id="statusFilter" class="form-select" style="width: 150px;" onchange="filterUsers()">
+                    <option value="">全部状态</option>
+                    <option value="active">活跃用户</option>
+                    <option value="inactive">不活跃用户</option>
+                    <option value="disabled">已禁用</option>
+                </select>
+                <select id="sortField" class="form-select" style="width: 150px;" onchange="sortUsers()">
+                    <option value="created_at">按注册时间</option>
+                    <option value="last_login">按最后登录</option>
+                    <option value="username">按用户名</option>
+                    <option value="best_score">按最高分</option>
+                </select>
+                <select id="sortOrder" class="form-select" style="width: 100px;" onchange="sortUsers()">
+                    <option value="desc">降序</option>
+                    <option value="asc">升序</option>
+                </select>
+            </div>
+
+            <!-- 用户表格 -->
+            <div style="overflow-x: auto;">
+                <table class="data-table" id="usersTable">
+                    <thead>
+                        <tr>
+                            <th>
+                                <input type="checkbox" id="selectAll" onchange="toggleSelectAll()">
+                            </th>
+                            <th>用户名</th>
+                            <th>手机号</th>
+                            <th>邮箱</th>
+                            <th>注册时间</th>
+                            <th>最后登录</th>
+                            <th>最高分</th>
+                            <th>游戏次数</th>
+                            <th>状态</th>
+                            <th>操作</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody">
+                        <tr>
+                            <td colspan="10" style="text-align: center; padding: 40px;">
+                                <i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i>正在加载用户数据...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- 批量操作 -->
+            <div id="batchActions" style="display: none; margin-top: 15px; padding: 15px; background: #f8fafc; border-radius: 8px;">
+                <span style="margin-right: 15px;">已选择 <span id="selectedCount">0</span> 个用户：</span>
+                <button class="btn btn-sm btn-warning" onclick="batchResetPassword()">
+                    <i class="fas fa-key"></i> 重置密码
+                </button>
+                <button class="btn btn-sm btn-danger" onclick="batchDisableUsers()">
+                    <i class="fas fa-ban"></i> 禁用用户
+                </button>
+                <button class="btn btn-sm btn-success" onclick="batchEnableUsers()">
+                    <i class="fas fa-check"></i> 启用用户
+                </button>
+                <button class="btn btn-sm btn-danger" onclick="batchDeleteUsers()">
+                    <i class="fas fa-trash"></i> 删除用户
+                </button>
+            </div>
+
+            <!-- 分页 -->
+            <div id="pagination"></div>
+        </div>
+    </main>
+
+    <!-- 创建用户模态框 -->
+    <div id="createUserModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">创建新用户</h3>
+                <button class="modal-close" onclick="closeModal('createUserModal')">&times;</button>
+            </div>
+            <form data-api="/api/admin/users/create" data-method="POST">
+                <div class="form-group">
+                    <label class="form-label">用户名 *</label>
+                    <input type="text" name="username" class="form-input" required 
+                           placeholder="请输入用户名">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">手机号 *</label>
+                    <input type="tel" name="phone" class="form-input" required 
+                           placeholder="请输入11位手机号">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">邮箱</label>
+                    <input type="email" name="email" class="form-input" 
+                           placeholder="请输入邮箱地址（可选）">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">初始密码 *</label>
+                    <input type="password" name="password" class="form-input" required 
+                           placeholder="请输入初始密码">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">用户状态</label>
+                    <select name="is_active" class="form-select">
+                        <option value="true">启用</option>
+                        <option value="false">禁用</option>
+                    </select>
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('createUserModal')">取消</button>
+                    <button type="submit" class="btn btn-success">创建用户</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 编辑用户模态框 -->
+    <div id="editUserModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">编辑用户</h3>
+                <button class="modal-close" onclick="closeModal('editUserModal')">&times;</button>
+            </div>
+            <form data-api="/api/admin/users/update" data-method="POST">
+                <input type="hidden" name="user_id" id="editUserId">
+                <div class="form-group">
+                    <label class="form-label">用户名</label>
+                    <input type="text" name="username" id="editUsername" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">手机号</label>
+                    <input type="tel" name="phone" id="editPhone" class="form-input" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">邮箱</label>
+                    <input type="email" name="email" id="editEmail" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">用户状态</label>
+                    <select name="is_active" id="editStatus" class="form-select">
+                        <option value="true">启用</option>
+                        <option value="false">禁用</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">最高分数</label>
+                    <input type="number" name="best_score" id="editBestScore" class="form-input" min="0">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">游戏次数</label>
+                    <input type="number" name="games_played" id="editGamesPlayed" class="form-input" min="0">
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('editUserModal')">取消</button>
+                    <button type="submit" class="btn btn-primary">保存更改</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 用户详情模态框 -->
+    <div id="userDetailModal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3 class="modal-title">用户详情</h3>
+                <button class="modal-close" onclick="closeModal('userDetailModal')">&times;</button>
+            </div>
+            <div id="userDetailContent">
+                <!-- 用户详情内容将在这里动态加载 -->
+            </div>
+        </div>
+    </div>
+
+    <script src="/js/admin.js"></script>
+    <script>
+        // 用户管理页面特定功能
+        let usersData = [];
+        let filteredUsers = [];
+        let currentPage = 1;
+        let pageSize = 10;
+        let selectedUsers = new Set();
+
+        // 搜索防抖
+        const debouncedSearch = adminApp.debounce(searchUsers, 300);
+
+        // 加载用户统计数据
+        async function loadUserStats() {
+            try {
+                const response = await apiCall('/api/admin/users/statistics');
+                if (response.success) {
+                    updateUserStatsGrid(response.statistics);
+                } else {
+                    console.error('加载用户统计失败:', response.message);
+                }
+            } catch (error) {
+                console.error('加载用户统计失败:', error);
+                // 显示默认数据
+                updateUserStatsGrid({
+                    total_users: 0,
+                    active_users: 0,
+                    new_users_today: 0,
+                    total_games: 0,
+                    average_score: 0
+                });
+            }
+        }
+
+        // 更新用户统计卡片
+        function updateUserStatsGrid(stats) {
+            const grid = document.getElementById('userStatsGrid');
+            const activeRate = stats.total_users > 0 ? ((stats.active_users / stats.total_users) * 100).toFixed(1) : '0';
+            
+            grid.innerHTML = `
+                <div class="stat-card">
+                    <i class="fas fa-users stat-icon" style="color: #3b82f6;"></i>
+                    <div class="stat-number">${formatNumber(stats.total_users || 0)}</div>
+                    <div class="stat-label">总用户数</div>
+                    <div class="stat-detail">今日新增: ${formatNumber(stats.new_users_today || 0)}</div>
+                </div>
+                
+                <div class="stat-card">
+                    <i class="fas fa-user-check stat-icon" style="color: #10b981;"></i>
+                    <div class="stat-number">${formatNumber(stats.active_users || 0)}</div>
+                    <div class="stat-label">活跃用户</div>
+                    <div class="stat-detail">活跃率: ${activeRate}%</div>
+                </div>
+                
+                <div class="stat-card">
+                    <i class="fas fa-gamepad stat-icon" style="color: #8b5cf6;"></i>
+                    <div class="stat-number">${formatNumber(stats.average_score || 0)}</div>
+                    <div class="stat-label">平均分数</div>
+                    <div class="stat-detail">总游戏数: ${formatNumber(stats.total_games || 0)}</div>
+                </div>
+                
+                <div class="stat-card">
+                    <i class="fas fa-clock stat-icon" style="color: #f59e0b;"></i>
+                    <div class="stat-number">${formatNumber(stats.total_games || 0)}</div>
+                    <div class="stat-label">总游戏次数</div>
+                    <div class="stat-detail">平均每人: ${stats.total_users > 0 ? Math.round(stats.total_games / stats.total_users) : 0} 次</div>
+                </div>
+            `;
+        }
+
+        // 加载用户列表
+        async function loadUsers() {
+            try {
+                // 显示加载状态
+                const tbody = document.getElementById('usersTableBody');
+                tbody.innerHTML = `
+                    <tr><td colspan="10" style="text-align: center; padding: 40px;">
+                        <i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i>正在加载用户数据...
+                    </td></tr>
+                `;
+                
+                const response = await apiCall('/api/admin/users');
+                
+                if (response.success) {
+                    usersData = response.users.map(user => ({
+                        id: user.user_id,
+                        user_id: user.user_id,
+                        username: user.username,
+                        phone: user.phone,
+                        email: user.email,
+                        created_at: user.created_at,
+                        last_login: user.last_login,
+                        best_score: user.best_score,
+                        games_played: user.games_played,
+                        is_active: user.is_active,
+                        created_by: user.created_by
+                    }));
+                    
+                    filteredUsers = [...usersData];
+                    applyFiltersAndSort();
+                } else {
+                    throw new Error(response.message || '获取用户列表失败');
+                }
+                
+            } catch (error) {
+                document.getElementById('usersTableBody').innerHTML = `
+                    <tr><td colspan="10" style="text-align: center; color: #ef4444;">
+                        加载失败: ${error.message}
+                    </td></tr>
+                `;
+                showAlert('加载用户列表失败: ' + error.message, 'error');
+            }
+        }
+
+        // 应用过滤和排序
+        function applyFiltersAndSort() {
+            // 应用过滤
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const statusFilter = document.getElementById('statusFilter').value;
+            
+            filteredUsers = usersData.filter(user => {
+                // 搜索过滤
+                const matchesSearch = !searchTerm || 
+                    user.username?.toLowerCase().includes(searchTerm) ||
+                    user.phone?.includes(searchTerm) ||
+                    user.email?.toLowerCase().includes(searchTerm);
+                
+                // 状态过滤
+                let matchesStatus = true;
+                if (statusFilter === 'active') {
+                    matchesStatus = user.is_active !== false && user.last_login;
+                } else if (statusFilter === 'inactive') {
+                    matchesStatus = !user.last_login || user.is_active === false;
+                } else if (statusFilter === 'disabled') {
+                    matchesStatus = user.is_active === false;
+                }
+                
+                return matchesSearch && matchesStatus;
+            });
+
+            // 应用排序
+            const sortField = document.getElementById('sortField').value;
+            const sortOrder = document.getElementById('sortOrder').value;
+            
+            filteredUsers.sort((a, b) => {
+                let aVal = a[sortField];
+                let bVal = b[sortField];
+                
+                // 处理日期字段
+                if (sortField === 'created_at' || sortField === 'last_login') {
+                    aVal = new Date(aVal || 0);
+                    bVal = new Date(bVal || 0);
+                }
+                
+                // 处理数字字段
+                if (sortField === 'best_score' || sortField === 'games_played') {
+                    aVal = Number(aVal) || 0;
+                    bVal = Number(bVal) || 0;
+                }
+                
+                // 处理字符串字段
+                if (typeof aVal === 'string') {
+                    aVal = aVal.toLowerCase();
+                    bVal = (bVal || '').toLowerCase();
+                }
+                
+                if (aVal < bVal) return sortOrder === 'asc' ? -1 : 1;
+                if (aVal > bVal) return sortOrder === 'asc' ? 1 : -1;
+                return 0;
+            });
+
+            renderUsersTable();
+        }
+
+        // 渲染用户表格
+        function renderUsersTable() {
+            const tbody = document.getElementById('usersTableBody');
+            const startIndex = (currentPage - 1) * pageSize;
+            const endIndex = startIndex + pageSize;
+            const pageUsers = filteredUsers.slice(startIndex, endIndex);
+
+            if (pageUsers.length === 0) {
+                tbody.innerHTML = `
+                    <tr><td colspan="10" style="text-align: center; padding: 40px; color: #6b7280;">
+                        ${filteredUsers.length === 0 ? '暂无用户数据' : '当前页无数据'}
+                    </td></tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = pageUsers.map(user => `
+                <tr>
+                    <td>
+                        <input type="checkbox" value="${user.id}" onchange="toggleUserSelection('${user.id}')">
+                    </td>
+                    <td>
+                        <strong>${user.username || '-'}</strong>
+                    </td>
+                    <td>${user.phone ? user.phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2') : '-'}</td>
+                    <td>${user.email || '-'}</td>
+                    <td>${formatDate(user.created_at, 'YYYY-MM-DD')}</td>
+                    <td>${formatDate(user.last_login, 'YYYY-MM-DD HH:mm')}</td>
+                    <td>${formatNumber(user.best_score || 0)}</td>
+                    <td>${formatNumber(user.games_played || 0)}</td>
+                    <td>${getUserStatusBadge(user)}</td>
+                    <td>
+                        <button class="btn btn-sm btn-info" onclick="viewUserDetail('${user.id}')" data-tooltip="查看详情">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                        <button class="btn btn-sm btn-primary" onclick="editUser('${user.id}')" data-tooltip="编辑">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="btn btn-sm btn-warning" onclick="resetUserPassword('${user.id}')" data-tooltip="重置密码">
+                            <i class="fas fa-key"></i>
+                        </button>
+                        <button class="btn btn-sm btn-danger" onclick="deleteUser('${user.id}')" data-tooltip="删除">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+
+            // 更新分页
+            const totalPages = Math.ceil(filteredUsers.length / pageSize);
+            adminApp.createPagination('#pagination', currentPage, totalPages, goToPage);
+        }
+
+        // 搜索用户
+        function searchUsers() {
+            currentPage = 1;
+            applyFiltersAndSort();
+        }
+
+        // 过滤用户
+        function filterUsers() {
+            currentPage = 1;
+            applyFiltersAndSort();
+        }
+
+        // 排序用户
+        function sortUsers() {
+            applyFiltersAndSort();
+        }
+
+        // 分页跳转
+        function goToPage(page) {
+            currentPage = page;
+            renderUsersTable();
+        }
+
+        // 刷新用户列表
+        async function refreshUsers() {
+            selectedUsers.clear();
+            updateBatchActions();
+            await Promise.all([loadUsers(), loadUserStats()]);
+            showAlert('用户列表已刷新', 'success', 2000);
+        }
+
+        // 显示创建用户模态框
+        function showCreateUserModal() {
+            showModal('createUserModal');
+        }
+
+        // 查看用户详情
+        async function viewUserDetail(userId) {
+            try {
+                showModal('userDetailModal');
+                document.getElementById('userDetailContent').innerHTML = '<div style="text-align: center; padding: 20px;"><i class="fas fa-spinner fa-spin"></i> 加载中...</div>';
+                
+                const response = await apiCall(`/api/admin/users/detail?user_id=${userId}`);
+                const user = response.user;
+                
+                document.getElementById('userDetailContent').innerHTML = `
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div>
+                            <h4 style="margin-bottom: 15px; color: #374151;">基本信息</h4>
+                            <div style="background: #f8fafc; padding: 15px; border-radius: 8px;">
+                                <p><strong>用户名:</strong> ${user.username || '-'}</p>
+                                <p><strong>手机号:</strong> ${user.phone || '-'}</p>
+                                <p><strong>邮箱:</strong> ${user.email || '-'}</p>
+                                <p><strong>状态:</strong> ${getUserStatusBadge(user)}</p>
+                                <p><strong>注册时间:</strong> ${formatDate(user.created_at)}</p>
+                                <p><strong>最后登录:</strong> ${formatDate(user.last_login)}</p>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 style="margin-bottom: 15px; color: #374151;">游戏数据</h4>
+                            <div style="background: #f8fafc; padding: 15px; border-radius: 8px;">
+                                <p><strong>最高分:</strong> ${formatNumber(user.best_score || 0)}</p>
+                                <p><strong>游戏次数:</strong> ${formatNumber(user.games_played || 0)}</p>
+                                <p><strong>平均分:</strong> ${user.games_played ? (user.best_score / user.games_played).toFixed(1) : '0'}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
+                        <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                            <button class="btn btn-primary" onclick="editUser('${userId}'); closeModal('userDetailModal');">
+                                <i class="fas fa-edit"></i> 编辑用户
+                            </button>
+                            <button class="btn btn-warning" onclick="resetUserPassword('${userId}')">
+                                <i class="fas fa-key"></i> 重置密码
+                            </button>
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                document.getElementById('userDetailContent').innerHTML = `
+                    <div style="text-align: center; padding: 20px; color: #ef4444;">
+                        加载失败: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        // 编辑用户
+        async function editUser(userId) {
+            try {
+                const user = usersData.find(u => u.id === userId);
+                if (!user) {
+                    showAlert('用户不存在', 'error');
+                    return;
+                }
+
+                // 填充表单
+                document.getElementById('editUserId').value = userId;
+                document.getElementById('editUsername').value = user.username || '';
+                document.getElementById('editPhone').value = user.phone || '';
+                document.getElementById('editEmail').value = user.email || '';
+                document.getElementById('editStatus').value = user.is_active === false ? 'false' : 'true';
+                document.getElementById('editBestScore').value = user.best_score || 0;
+                document.getElementById('editGamesPlayed').value = user.games_played || 0;
+
+                showModal('editUserModal');
+            } catch (error) {
+                showAlert('编辑用户失败: ' + error.message, 'error');
+            }
+        }
+
+        // 重置用户密码
+        async function resetUserPassword(userId) {
+            const confirmed = await adminApp.confirm(
+                '确定要重置该用户的密码吗？新密码将是: 123456',
+                '重置密码确认'
+            );
+            
+            if (confirmed) {
+                try {
+                    await apiCall('/api/admin/users/reset-password', 'POST', { user_id: userId });
+                    showAlert('密码重置成功，新密码为: 123456', 'success');
+                } catch (error) {
+                    showAlert('重置密码失败: ' + error.message, 'error');
+                }
+            }
+        }
+
+        // 删除用户
+        async function deleteUser(userId) {
+            const user = usersData.find(u => u.id === userId);
+            const confirmed = await adminApp.confirm(
+                `确定要删除用户 "${user?.username}" 吗？此操作不可恢复。`,
+                '删除用户确认'
+            );
+            
+            if (confirmed) {
+                try {
+                    await apiCall('/api/admin/users/delete', 'POST', { user_id: userId });
+                    showAlert('用户删除成功', 'success');
+                    await refreshUsers();
+                } catch (error) {
+                    showAlert('删除用户失败: ' + error.message, 'error');
+                }
+            }
+        }
+
+        // 导出用户数据
+        async function exportUsers() {
+            try {
+                const format = 'csv'; // 可以改为 'json'
+                const response = await apiCall(`/api/admin/users/export?format=${format}`);
+                
+                // 创建下载链接
+                const blob = new Blob([response.data], { 
+                    type: format === 'csv' ? 'text/csv' : 'application/json' 
+                });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `users_${new Date().toISOString().split('T')[0]}.${format}`;
+                a.click();
+                window.URL.revokeObjectURL(url);
+                
+                showAlert('用户数据导出成功', 'success');
+            } catch (error) {
+                showAlert('导出失败: ' + error.message, 'error');
+            }
+        }
+
+        // 切换用户选择
+        function toggleUserSelection(userId) {
+            if (selectedUsers.has(userId)) {
+                selectedUsers.delete(userId);
+            } else {
+                selectedUsers.add(userId);
+            }
+            updateBatchActions();
+        }
+
+        // 全选/取消全选
+        function toggleSelectAll() {
+            const selectAll = document.getElementById('selectAll');
+            const checkboxes = document.querySelectorAll('#usersTableBody input[type="checkbox"]');
+            
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = selectAll.checked;
+                if (selectAll.checked) {
+                    selectedUsers.add(checkbox.value);
+                } else {
+                    selectedUsers.delete(checkbox.value);
+                }
+            });
+            
+            updateBatchActions();
+        }
+
+        // 更新批量操作
+        function updateBatchActions() {
+            const batchActions = document.getElementById('batchActions');
+            const selectedCount = document.getElementById('selectedCount');
+            
+            if (selectedUsers.size > 0) {
+                batchActions.style.display = 'block';
+                selectedCount.textContent = selectedUsers.size;
+            } else {
+                batchActions.style.display = 'none';
+            }
+        }
+
+        // 批量重置密码
+        async function batchResetPassword() {
+            const confirmed = await adminApp.confirm(
+                `确定要重置选中的 ${selectedUsers.size} 个用户的密码吗？新密码将是: 123456`,
+                '批量重置密码确认'
+            );
+            
+            if (confirmed) {
+                try {
+                    await apiCall('/api/admin/users/batch-reset-password', 'POST', { 
+                        user_ids: Array.from(selectedUsers) 
+                    });
+                    showAlert('批量重置密码成功', 'success');
+                    selectedUsers.clear();
+                    updateBatchActions();
+                } catch (error) {
+                    showAlert('批量重置密码失败: ' + error.message, 'error');
+                }
+            }
+        }
+
+        // 批量禁用用户
+        async function batchDisableUsers() {
+            const confirmed = await adminApp.confirm(
+                `确定要禁用选中的 ${selectedUsers.size} 个用户吗？`,
+                '批量禁用用户确认'
+            );
+            
+            if (confirmed) {
+                try {
+                    await apiCall('/api/admin/users/batch-update', 'POST', { 
+                        user_ids: Array.from(selectedUsers),
+                        is_active: false
+                    });
+                    showAlert('批量禁用成功', 'success');
+                    selectedUsers.clear();
+                    updateBatchActions();
+                    await refreshUsers();
+                } catch (error) {
+                    showAlert('批量禁用失败: ' + error.message, 'error');
+                }
+            }
+        }
+
+        // 批量启用用户
+        async function batchEnableUsers() {
+            const confirmed = await adminApp.confirm(
+                `确定要启用选中的 ${selectedUsers.size} 个用户吗？`,
+                '批量启用用户确认'
+            );
+            
+            if (confirmed) {
+                try {
+                    await apiCall('/api/admin/users/batch-update', 'POST', { 
+                        user_ids: Array.from(selectedUsers),
+                        is_active: true
+                    });
+                    showAlert('批量启用成功', 'success');
+                    selectedUsers.clear();
+                    updateBatchActions();
+                    await refreshUsers();
+                } catch (error) {
+                    showAlert('批量启用失败: ' + error.message, 'error');
+                }
+            }
+        }
+
+        // 批量删除用户
+        async function batchDeleteUsers() {
+            const confirmed = await adminApp.confirm(
+                `⚠️ 确定要删除选中的 ${selectedUsers.size} 个用户吗？此操作不可恢复。`,
+                '批量删除用户确认'
+            );
+            
+            if (confirmed) {
+                try {
+                    await apiCall('/api/admin/users/batch-delete', 'POST', { 
+                        user_ids: Array.from(selectedUsers) 
+                    });
+                    showAlert('批量删除成功', 'success');
+                    selectedUsers.clear();
+                    updateBatchActions();
+                    await refreshUsers();
+                } catch (error) {
+                    showAlert('批量删除失败: ' + error.message, 'error');
+                }
+            }
+        }
+
+        // 页面初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            // 加载数据
+            Promise.all([loadUsers(), loadUserStats()]);
+
+            // 监听表单提交成功事件
+            const createForm = document.querySelector('#createUserModal form');
+            const editForm = document.querySelector('#editUserModal form');
+            
+            if (createForm) {
+                createForm.addEventListener('success', () => {
+                    closeModal('createUserModal');
+                    createForm.reset();
+                    refreshUsers();
+                });
+            }
+            
+            if (editForm) {
+                editForm.addEventListener('success', () => {
+                    closeModal('editUserModal');
+                    refreshUsers();
+                });
+            }
+        });
+    </script>
+</body>
+</html> 

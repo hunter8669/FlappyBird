@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlapPy Bird 管理员登录</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+        }
+
+        .login-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .logo {
+            font-size: 3rem;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            color: #2563eb;
+            font-size: 1.8rem;
+            margin-bottom: 30px;
+            font-weight: 600;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #374151;
+            font-weight: 500;
+        }
+
+        .input-wrapper {
+            position: relative;
+        }
+
+        .input-wrapper i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9ca3af;
+            font-size: 1.1rem;
+        }
+
+        input[type="text"],
+        input[type="password"] {
+            width: 100%;
+            padding: 15px 15px 15px 45px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            background: #fff;
+        }
+
+        input[type="text"]:focus,
+        input[type="password"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .login-btn {
+            width: 100%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+
+        .login-btn:active {
+            transform: translateY(0);
+        }
+
+        .login-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid transparent;
+            border-top: 2px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            display: none;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            font-size: 0.95rem;
+        }
+
+        .alert.error {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            color: #dc2626;
+        }
+
+        .alert.success {
+            background: #f0fdf4;
+            border: 1px solid #bbf7d0;
+            color: #16a34a;
+        }
+
+        .alert.show {
+            display: block;
+        }
+
+        .back-link {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .back-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            transition: color 0.3s ease;
+        }
+
+        .back-link a:hover {
+            color: #4f46e5;
+        }
+
+        .info-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: #64748b;
+        }
+
+        .demo-credentials {
+            background: #fff3cd;
+            border: 1px solid #ffd60a;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            font-size: 0.9rem;
+        }
+
+        .demo-credentials h4 {
+            color: #b45309;
+            margin-bottom: 8px;
+            font-size: 1rem;
+        }
+
+        .demo-credentials p {
+            color: #92400e;
+            margin: 4px 0;
+        }
+
+        @media (max-width: 480px) {
+            .login-container {
+                margin: 20px;
+                padding: 30px 25px;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            .logo {
+                font-size: 2.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="logo">
+            <i class="fas fa-shield-alt"></i>
+        </div>
+        <h1>管理员登录</h1>
+        
+        <div id="alert" class="alert"></div>
+        
+        <form id="loginForm">
+            <div class="form-group">
+                <label for="username">管理员账号</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-user-shield"></i>
+                    <input type="text" id="username" name="username" required 
+                           placeholder="请输入管理员用户名" autocomplete="username">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="password">管理员密码</label>
+                <div class="input-wrapper">
+                    <i class="fas fa-lock"></i>
+                    <input type="password" id="password" name="password" required 
+                           placeholder="请输入管理员密码" autocomplete="current-password">
+                </div>
+            </div>
+            
+            <button type="submit" class="login-btn" id="loginBtn">
+                <i class="fas fa-sign-in-alt"></i>
+                <span class="btn-text">登录管理后台</span>
+                <div class="spinner"></div>
+            </button>
+        </form>
+
+        <div class="demo-credentials">
+            <h4><i class="fas fa-info-circle"></i> 演示账号</h4>
+            <p><strong>用户名:</strong> admin</p>
+            <p><strong>密码:</strong> admin123</p>
+            <p style="margin-top: 8px; font-size: 0.85rem;">
+                <i class="fas fa-exclamation-triangle"></i> 
+                生产环境请立即修改默认密码
+            </p>
+        </div>
+
+        <div class="info-box">
+            <i class="fas fa-shield-alt"></i>
+            <strong>管理员权限包括:</strong><br>
+            • 用户管理（增删改查）<br>
+            • 数据统计与分析<br>
+            • 系统监控与维护<br>
+            • 权限控制与配置
+        </div>
+        
+        <div class="back-link">
+            <a href="/admin">
+                <i class="fas fa-arrow-left"></i>
+                返回管理后台
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // 检查URL参数是否需要强制登出
+        const urlParams = new URLSearchParams(window.location.search);
+        const forceLogout = urlParams.get('logout');
+        
+        if (forceLogout) {
+            // 强制登出，清除所有认证信息
+            localStorage.removeItem('admin_token');
+            localStorage.removeItem('admin_info');
+            
+            // 清除URL参数
+            const url = new URL(window.location);
+            url.searchParams.delete('logout');
+            window.history.replaceState({}, '', url);
+            
+            showAlert('已退出登录，请重新输入凭据', 'success');
+        }
+
+        // 显示消息
+        function showAlert(message, type = 'error') {
+            const alert = document.getElementById('alert');
+            alert.textContent = message;
+            alert.className = `alert ${type} show`;
+            
+            setTimeout(() => {
+                alert.classList.remove('show');
+            }, 5000);
+        }
+
+        // 登录表单处理
+        document.getElementById('loginForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const btn = document.getElementById('loginBtn');
+            const btnText = btn.querySelector('.btn-text');
+            const spinner = btn.querySelector('.spinner');
+            const alert = document.getElementById('alert');
+            
+            // 获取表单数据
+            const username = document.getElementById('username').value.trim();
+            const password = document.getElementById('password').value;
+            
+            if (!username || !password) {
+                showAlert('请填写完整的登录信息');
+                return;
+            }
+            
+            // 显示加载状态
+            btn.disabled = true;
+            btnText.style.display = 'none';
+            spinner.style.display = 'block';
+            alert.classList.remove('show');
+            
+            try {
+                const response = await fetch('/api/admin/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        password: password
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    // 保存token和管理员信息
+                    localStorage.setItem('admin_token', data.token);
+                    localStorage.setItem('admin_info', JSON.stringify(data.admin));
+                    
+                    showAlert('登录成功！正在跳转...', 'success');
+                    
+                    // 延迟跳转到管理后台
+                    setTimeout(() => {
+                        window.location.href = '/admin';
+                    }, 1000);
+                } else {
+                    showAlert(data.message || '登录失败，请检查用户名和密码');
+                }
+            } catch (error) {
+                console.error('登录错误:', error);
+                showAlert('网络错误，请稍后重试');
+            } finally {
+                // 恢复按钮状态
+                btn.disabled = false;
+                btnText.style.display = 'inline';
+                spinner.style.display = 'none';
+            }
+        });
+
+        // 回车键登录
+        document.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                document.getElementById('loginForm').dispatchEvent(new Event('submit'));
+            }
+        });
+
+        // 输入框聚焦效果
+        document.querySelectorAll('input').forEach(input => {
+            input.addEventListener('focus', function() {
+                this.parentElement.style.transform = 'scale(1.02)';
+            });
+            
+            input.addEventListener('blur', function() {
+                this.parentElement.style.transform = 'scale(1)';
+            });
+        });
+    </script>
+</body>
+</html> 

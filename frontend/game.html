@@ -319,6 +319,23 @@
         <div class="ui-overlay">
             <!-- 游戏标题 -->
             <div class="game-title" id="gameTitle">🐦 FlapPy Bird</div>
+            <!-- 版本提示 -->
+            <div class="version-info" id="versionInfo" style="
+                color: #FFE4B5; 
+                font-size: clamp(0.8rem, 2.5vw, 1rem);
+                text-align: center;
+                margin-top: -5px;
+                margin-bottom: 10px;
+                text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
+                background: rgba(0,0,0,0.3);
+                padding: 5px 15px;
+                border-radius: 15px;
+                max-width: 90%;
+                margin-left: auto;
+                margin-right: auto;
+            ">
+                🌐 Web简洁版 | 完整版请下载源码版或EXE版
+            </div>
             
             <!-- 游戏信息 -->
             <div class="game-info">
@@ -340,6 +357,10 @@
             <!-- 开始界面 -->
             <div id="startScreen" class="game-instructions">
                 <h3>🎮 准备开始游戏？</h3>
+                <div style="color: #FFE4B5; margin: 10px 0; font-size: clamp(0.8rem, 2.5vw, 1rem);">
+                    <p>🌐 <strong>当前版本：Web简洁版</strong></p>
+                    <p>💎 完整版功能更丰富，请下载源码版或EXE版</p>
+                </div>
                 <p>点击或按空格键控制小鸟飞行</p>
                 <p>避开管道，获得高分！</p>
                 <p id="touchDebug" style="color: #ffff00; font-size: 0.8rem;">触摸测试：点击屏幕任意地方</p>
@@ -354,6 +375,11 @@
                 <h2>🎯 游戏结束!</h2>
                 <div class="score-display">本次得分: <span id="finalScore">0</span></div>
                 <div class="score-display">最高纪录: <span id="bestScore">0</span></div>
+                <div style="color: #FFE4B5; margin: 15px 0; font-size: clamp(0.8rem, 2.5vw, 1rem); border-top: 1px solid rgba(255,255,255,0.3); padding-top: 15px;">
+                    <p>🌐 您正在体验Web简洁版</p>
+                    <p>💎 想要更多功能？下载完整版源码或EXE版本！</p>
+                    <p style="font-size: 0.8em; color: #DDD;">完整版包含更多游戏模式、成就系统、用户管理等功能</p>
+                </div>
                 <button class="restart-button" onclick="restartGame()">重新开始</button>
                 <button class="restart-button" onclick="goHome()">返回首页</button>
             </div>
@@ -714,6 +740,7 @@
             document.getElementById('startScreen').style.display = 'none';
             document.getElementById('gameOverScreen').style.display = 'none';
             document.getElementById('gameTitle').style.display = 'none';
+            document.getElementById('versionInfo').style.display = 'none'; // 隐藏版本提示
             
             initGame();
             initTimers();
@@ -747,6 +774,7 @@
             document.getElementById('gameOverScreen').style.display = 'none';
             document.getElementById('startScreen').style.display = 'block';
             document.getElementById('gameTitle').style.display = 'block';
+            document.getElementById('versionInfo').style.display = 'block'; // 显示版本提示
             initGame(); // 重置游戏状态
             render(); // 渲染初始画面
         }
@@ -1263,92 +1291,16 @@
             
             // 绘制Boss
             if (boss) {
-                ctx.fillStyle = boss.color;
-                ctx.fillRect(boss.x, boss.y, boss.width, boss.height);
-                
-                // Boss眼睛
-                ctx.fillStyle = '#FF0000';
-                ctx.fillRect(boss.x + 10, boss.y + 15, 15, 15);
-                ctx.fillRect(boss.x + boss.width - 25, boss.y + 15, 15, 15);
-                
-                // 血条
-                const barWidth = 100;
-                const barHeight = 10;
-                const barX = boss.x - 10;
-                const barY = boss.y - 20;
-                
-                ctx.fillStyle = '#FF0000';
-                ctx.fillRect(barX, barY, barWidth, barHeight);
-                ctx.fillStyle = '#00FF00';
-                ctx.fillRect(barX, barY, (boss.health / boss.maxHealth) * barWidth, barHeight);
-                
-                // Boss等级显示
-                ctx.fillStyle = '#FFFFFF';
-                ctx.font = 'bold 16px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(`Boss Lv.${boss.wave}`, boss.x + boss.width/2, boss.y - 30);
-                
-                // Boss子弹
-                ctx.fillStyle = '#FF4500';
-                boss.bullets.forEach(bullet => {
-                    // 绘制子弹预警轨迹
-                    ctx.fillStyle = 'rgba(255, 69, 0, 0.3)';
-                    ctx.fillRect(bullet.x - 30, bullet.y - 2, 30, 4);
-                    
-                    // 绘制子弹本体
-                    ctx.fillStyle = '#FF4500';
-                    ctx.beginPath();
-                    ctx.arc(bullet.x, bullet.y, bullet.size, 0, Math.PI * 2);
-                    ctx.fill();
-                });
-            }
-            
-            // Boss模式特殊显示
-            if (currentMode === 'boss') {
-                // 显示当前波次
-                ctx.save();
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-                ctx.font = 'bold 24px Arial';
-                ctx.textAlign = 'center';
-                ctx.fillText(`第 ${bossWave} 波`, canvas.width / 2, 40);
-                
-                // 简化的状态显示
-                ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-                ctx.font = '12px Arial';
-                ctx.fillText(`Boss状态: ${boss ? `生命值 ${boss.health}/${boss.maxHealth}` : '生成中...'}`, canvas.width / 2, 60);
-                
-                ctx.restore();
+                drawBoss(boss);
             }
             
             // 绘制小鸟
-            ctx.fillStyle = bird.color;
-            ctx.fillRect(bird.x, bird.y, bird.width, bird.height);
-            
-            // 小鸟装饰（简单的眼睛和喙）
-            ctx.fillStyle = '#000000';
-            ctx.fillRect(bird.x + 18, bird.y + 5, 4, 4); // 眼睛
-            ctx.fillStyle = '#FFA500';
-            ctx.fillRect(bird.x + bird.width, bird.y + 10, 8, 4); // 喙
-            
-            // 小鸟翅膀动画
-            const wingOffset = Math.sin(Date.now() * 0.02) * 3;
-            ctx.fillStyle = '#FFB347';
-            ctx.fillRect(bird.x + 5, bird.y + 12 + wingOffset, 15, 8);
+            drawBird();
             
             // 绘制小鸟子弹（boss模式）
             if (currentMode === 'boss') {
-                ctx.fillStyle = '#FFD700';
                 birdBullets.forEach(bullet => {
-                    ctx.beginPath();
-                    ctx.arc(bullet.x, bullet.y, bullet.size, 0, Math.PI * 2);
-                    ctx.fill();
-                    
-                    // 子弹尾迹效果
-                    ctx.fillStyle = 'rgba(255, 215, 0, 0.5)';
-                    ctx.beginPath();
-                    ctx.arc(bullet.x - 10, bullet.y, bullet.size * 0.7, 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.fillStyle = '#FFD700';
+                    drawBirdBullet(bullet);
                 });
             }
             
@@ -1403,6 +1355,388 @@
             ctx.arc(x + 25, y, 35, 0, Math.PI * 2);
             ctx.arc(x + 50, y, 20, 0, Math.PI * 2);
             ctx.fill();
+        }
+        
+        // 绘制小鸟
+        function drawBird() {
+            ctx.save();
+            
+            // 计算小鸟倾斜角度（根据速度）
+            const tilt = Math.max(-30, Math.min(30, bird.velocity * 3));
+            
+            // 移动到小鸟中心，应用旋转
+            ctx.translate(bird.x + bird.width/2, bird.y + bird.height/2);
+            ctx.rotate(tilt * Math.PI / 180);
+            
+            // 绘制小鸟身体（椭圆形）
+            ctx.fillStyle = bird.color;
+            ctx.beginPath();
+            ctx.ellipse(0, 0, bird.width/2, bird.height/2, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 绘制小鸟肚子（浅色）
+            ctx.fillStyle = '#FFE4B5';
+            ctx.beginPath();
+            ctx.ellipse(0, 2, bird.width/3, bird.height/3, 0, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 绘制翅膀动画
+            const wingTime = Date.now() * 0.02;
+            const wingOffset = Math.sin(wingTime) * 5;
+            const wingScale = 0.8 + Math.sin(wingTime) * 0.2;
+            
+            // 左翅膀
+            ctx.fillStyle = '#FF8C00';
+            ctx.save();
+            ctx.scale(wingScale, 1);
+            ctx.beginPath();
+            ctx.ellipse(-8, -3 + wingOffset, 12, 6, -20 * Math.PI / 180, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+            
+            // 右翅膀
+            ctx.save();
+            ctx.scale(wingScale, 1);
+            ctx.beginPath();
+            ctx.ellipse(8, -3 + wingOffset, 12, 6, 20 * Math.PI / 180, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+            
+            // 绘制眼睛
+            ctx.fillStyle = '#FFFFFF';
+            ctx.beginPath();
+            ctx.arc(6, -5, 5, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 眼珠
+            ctx.fillStyle = '#000000';
+            ctx.beginPath();
+            ctx.arc(7, -4, 3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 眼神光
+            ctx.fillStyle = '#FFFFFF';
+            ctx.beginPath();
+            ctx.arc(8, -5, 1, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 绘制喙
+            ctx.fillStyle = '#FFA500';
+            ctx.beginPath();
+            ctx.moveTo(bird.width/2 - 5, 0);
+            ctx.lineTo(bird.width/2 + 5, 2);
+            ctx.lineTo(bird.width/2 - 2, 4);
+            ctx.closePath();
+            ctx.fill();
+            
+            // 绘制小鸟尾巴
+            ctx.fillStyle = '#FF6347';
+            ctx.save();
+            ctx.rotate(wingOffset * Math.PI / 180 * 0.5);
+            ctx.beginPath();
+            ctx.ellipse(-bird.width/2 + 2, 0, 8, 4, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.restore();
+            
+            // 在Boss模式下绘制战斗特效
+            if (currentMode === 'boss') {
+                // 战斗光环
+                const auraTime = Date.now() * 0.005;
+                ctx.strokeStyle = `rgba(255, 215, 0, ${0.5 + Math.sin(auraTime) * 0.3})`;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.arc(0, 0, bird.width/2 + 5 + Math.sin(auraTime) * 3, 0, Math.PI * 2);
+                ctx.stroke();
+                
+                // 小鸟护盾
+                if (birdHealth < maxBirdHealth) {
+                    ctx.strokeStyle = 'rgba(0, 255, 255, 0.6)';
+                    ctx.lineWidth = 1;
+                    ctx.setLineDash([3, 3]);
+                    ctx.beginPath();
+                    ctx.arc(0, 0, bird.width/2 + 8, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.setLineDash([]);
+                }
+            }
+            
+            ctx.restore();
+        }
+        
+        // 绘制小鸟子弹（boss模式）
+        function drawBirdBullet(bullet) {
+            ctx.save();
+            
+            // 子弹尾迹（彗星效果）
+            for (let i = 0; i < 6; i++) {
+                const alpha = 0.9 - i * 0.15;
+                const size = bullet.size - i * 0.5;
+                ctx.fillStyle = `rgba(255, 215, 0, ${alpha})`;
+                ctx.beginPath();
+                ctx.arc(bullet.x - i * 6, bullet.y, Math.max(1, size), 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // 子弹外层光环
+            const glowTime = Date.now() * 0.02;
+            const glowRadius = bullet.size + 2 + Math.sin(glowTime) * 1;
+            ctx.fillStyle = 'rgba(255, 215, 0, 0.4)';
+            ctx.beginPath();
+            ctx.arc(bullet.x, bullet.y, glowRadius, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 子弹主体
+            ctx.fillStyle = '#FFD700';
+            ctx.beginPath();
+            ctx.arc(bullet.x, bullet.y, bullet.size, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 子弹核心（白色高光）
+            ctx.fillStyle = '#FFFFFF';
+            ctx.beginPath();
+            ctx.arc(bullet.x + 1, bullet.y - 1, bullet.size * 0.4, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 旋转的能量环
+            ctx.save();
+            ctx.translate(bullet.x, bullet.y);
+            ctx.rotate(glowTime);
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.6)';
+            ctx.lineWidth = 1;
+            for (let i = 0; i < 4; i++) {
+                ctx.beginPath();
+                ctx.moveTo(bullet.size + 2, 0);
+                ctx.lineTo(bullet.size + 6, 0);
+                ctx.stroke();
+                ctx.rotate(Math.PI / 2);
+            }
+            ctx.restore();
+            
+            ctx.restore();
+        }
+        
+        // 绘制Boss
+        function drawBoss(boss) {
+            ctx.save();
+            
+            // Boss身体闪烁效果（受伤时）
+            const hurtFlash = boss.health < boss.maxHealth / 2;
+            const flashTime = Date.now() * 0.01;
+            
+            // Boss主体（机械风格）
+            if (hurtFlash && Math.sin(flashTime * 2) > 0) {
+                ctx.fillStyle = '#FF6666';
+            } else {
+                ctx.fillStyle = boss.color;
+            }
+            
+            // Boss身体（圆角矩形）
+            ctx.beginPath();
+            ctx.roundRect(boss.x, boss.y, boss.width, boss.height, 10);
+            ctx.fill();
+            
+            // Boss装甲板
+            ctx.fillStyle = '#444444';
+            for (let i = 0; i < 3; i++) {
+                for (let j = 0; j < 3; j++) {
+                    ctx.fillRect(boss.x + 10 + i * 20, boss.y + 10 + j * 15, 15, 10);
+                }
+            }
+            
+            // Boss核心（发光效果）
+            const coreGlow = 0.5 + Math.sin(Date.now() * 0.01) * 0.3;
+            ctx.fillStyle = `rgba(255, 0, 0, ${coreGlow})`;
+            ctx.beginPath();
+            ctx.arc(boss.x + boss.width/2, boss.y + boss.height/2, 15, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Boss眼睛（激光瞄准器）
+            ctx.fillStyle = '#FF0000';
+            ctx.beginPath();
+            ctx.arc(boss.x + 15, boss.y + 20, 8, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.arc(boss.x + boss.width - 15, boss.y + 20, 8, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 眼睛光束
+            const eyeGlow = Math.sin(Date.now() * 0.02);
+            if (eyeGlow > 0) {
+                ctx.strokeStyle = `rgba(255, 0, 0, ${eyeGlow})`;
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(boss.x + 15, boss.y + 20);
+                ctx.lineTo(boss.x - 100, boss.y + 20);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(boss.x + boss.width - 15, boss.y + 20);
+                ctx.lineTo(boss.x - 100, boss.y + 20);
+                ctx.stroke();
+            }
+            
+            // Boss武器（炮管）
+            ctx.fillStyle = '#666666';
+            for (let i = 0; i < 3; i++) {
+                const cannonY = boss.y + 25 + i * 20;
+                ctx.fillRect(boss.x - 20, cannonY, 25, 8);
+                // 炮口火焰
+                if (Math.random() > 0.8) {
+                    ctx.fillStyle = '#FFA500';
+                    ctx.beginPath();
+                    ctx.arc(boss.x - 25, cannonY + 4, 5, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#666666';
+                }
+            }
+            
+            // Boss推进器（底部）
+            ctx.fillStyle = '#0066FF';
+            for (let i = 0; i < 4; i++) {
+                const thrusterX = boss.x + 10 + i * 20;
+                ctx.fillRect(thrusterX, boss.y + boss.height, 10, 8);
+                // 推进器火焰
+                if (Math.random() > 0.5) {
+                    ctx.fillStyle = '#00AAFF';
+                    ctx.beginPath();
+                    ctx.arc(thrusterX + 5, boss.y + boss.height + 12, 6, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#0066FF';
+                }
+            }
+            
+            // Boss护盾（低血量时）
+            if (boss.health < boss.maxHealth * 0.3) {
+                ctx.strokeStyle = 'rgba(0, 255, 255, 0.6)';
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 5]);
+                ctx.beginPath();
+                ctx.roundRect(boss.x - 5, boss.y - 5, boss.width + 10, boss.height + 10, 15);
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+            
+            // 血条
+            const barWidth = boss.width + 20;
+            const barHeight = 12;
+            const barX = boss.x - 10;
+            const barY = boss.y - 25;
+            
+            // 血条背景
+            ctx.fillStyle = '#333333';
+            ctx.fillRect(barX - 2, barY - 2, barWidth + 4, barHeight + 4);
+            
+            // 血条底色
+            ctx.fillStyle = '#600000';
+            ctx.fillRect(barX, barY, barWidth, barHeight);
+            
+            // 当前血量
+            const healthPercent = boss.health / boss.maxHealth;
+            const healthColor = healthPercent > 0.6 ? '#00FF00' : 
+                              healthPercent > 0.3 ? '#FFFF00' : '#FF0000';
+            ctx.fillStyle = healthColor;
+            ctx.fillRect(barX, barY, barWidth * healthPercent, barHeight);
+            
+            // 血条光效
+            if (healthPercent > 0) {
+                const glowAlpha = 0.3 + Math.sin(Date.now() * 0.005) * 0.2;
+                ctx.fillStyle = `rgba(255, 255, 255, ${glowAlpha})`;
+                ctx.fillRect(barX, barY, barWidth * healthPercent * 0.8, 2);
+            }
+            
+            // Boss等级显示
+            ctx.fillStyle = '#FFFFFF';
+            ctx.font = 'bold 16px Arial';
+            ctx.textAlign = 'center';
+            ctx.strokeStyle = '#000000';
+            ctx.lineWidth = 2;
+            ctx.strokeText(`Boss Lv.${boss.wave}`, boss.x + boss.width/2, boss.y - 35);
+            ctx.fillText(`Boss Lv.${boss.wave}`, boss.x + boss.width/2, boss.y - 35);
+            
+            // Boss子弹
+            boss.bullets.forEach(bullet => {
+                drawBossBullet(bullet);
+            });
+            
+            // Boss模式特殊显示
+            if (currentMode === 'boss') {
+                // 显示当前波次
+                ctx.save();
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                ctx.font = 'bold 24px Arial';
+                ctx.textAlign = 'center';
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 2;
+                ctx.strokeText(`第 ${bossWave} 波`, canvas.width / 2, 40);
+                ctx.fillText(`第 ${bossWave} 波`, canvas.width / 2, 40);
+                
+                // 简化的状态显示
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                ctx.font = '14px Arial';
+                ctx.strokeStyle = '#000000';
+                ctx.lineWidth = 1;
+                const statusText = boss ? `生命值 ${boss.health}/${boss.maxHealth}` : '生成中...';
+                ctx.strokeText(`Boss状态: ${statusText}`, canvas.width / 2, 60);
+                ctx.fillText(`Boss状态: ${statusText}`, canvas.width / 2, 60);
+                
+                ctx.restore();
+            }
+            
+            ctx.restore();
+        }
+        
+        // 绘制Boss子弹
+        function drawBossBullet(bullet) {
+            ctx.save();
+            
+            // 子弹预警轨迹
+            ctx.fillStyle = 'rgba(255, 69, 0, 0.2)';
+            ctx.fillRect(bullet.x - 50, bullet.y - 3, 50, 6);
+            
+            // 子弹尾迹
+            for (let i = 0; i < 5; i++) {
+                ctx.fillStyle = `rgba(255, 69, 0, ${0.8 - i * 0.15})`;
+                ctx.beginPath();
+                ctx.arc(bullet.x - i * 8, bullet.y, bullet.size - i, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // 子弹主体（能量球效果）
+            const pulseTime = Date.now() * 0.01;
+            const pulseSize = bullet.size + Math.sin(pulseTime) * 2;
+            
+            // 外层光环
+            ctx.fillStyle = 'rgba(255, 69, 0, 0.6)';
+            ctx.beginPath();
+            ctx.arc(bullet.x, bullet.y, pulseSize + 3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 中间层
+            ctx.fillStyle = '#FF4500';
+            ctx.beginPath();
+            ctx.arc(bullet.x, bullet.y, pulseSize, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 核心（高亮）
+            ctx.fillStyle = '#FFFF00';
+            ctx.beginPath();
+            ctx.arc(bullet.x, bullet.y, bullet.size * 0.6, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // 能量闪电效果
+            if (Math.random() > 0.7) {
+                ctx.strokeStyle = '#FFFFFF';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(bullet.x - bullet.size, bullet.y);
+                ctx.lineTo(bullet.x + bullet.size, bullet.y);
+                ctx.stroke();
+                ctx.beginPath();
+                ctx.moveTo(bullet.x, bullet.y - bullet.size);
+                ctx.lineTo(bullet.x, bullet.y + bullet.size);
+                ctx.stroke();
+            }
+            
+            ctx.restore();
         }
         
         // 游戏主循环

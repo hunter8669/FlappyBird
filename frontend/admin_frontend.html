@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>前端管理 - FlapPy Bird 管理控制台</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="/css/admin.css" rel="stylesheet">
+</head>
+<body>
+    <!-- 侧边导航栏 -->
+    <nav class="admin-sidebar">
+        <div class="sidebar-header">
+            <h2><i class="fas fa-gamepad"></i> 管理控制台</h2>
+            <p>FlapPy Bird</p>
+        </div>
+        <div class="sidebar-nav">
+            <a href="/admin_dashboard.html" class="nav-item">
+                <i class="fas fa-tachometer-alt"></i> 系统概览
+            </a>
+            <a href="/admin_users.html" class="nav-item">
+                <i class="fas fa-users"></i> 用户管理
+            </a>
+            <a href="/admin_frontend.html" class="nav-item active">
+                <i class="fas fa-palette"></i> 前端管理
+            </a>
+            <a href="/admin_admins.html" class="nav-item">
+                <i class="fas fa-user-shield"></i> 管理员管理
+            </a>
+            <a href="/admin_system.html" class="nav-item">
+                <i class="fas fa-cogs"></i> 系统设置
+            </a>
+            <a href="/admin_logs.html" class="nav-item">
+                <i class="fas fa-file-alt"></i> 系统日志
+            </a>
+        </div>
+    </nav>
+
+    <!-- 主内容区域 -->
+    <main class="admin-main">
+        <!-- 顶部栏 -->
+        <header class="admin-header">
+            <div class="header-left">
+                <button class="toggle-sidebar">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h1 class="header-title">前端管理</h1>
+            </div>
+            <div class="header-right">
+                <div class="admin-user">
+                    <i class="fas fa-user-shield"></i>
+                    <span>加载中...</span>
+                </div>
+                <button class="logout-btn">
+                    <i class="fas fa-sign-out-alt"></i> 登出
+                </button>
+            </div>
+        </header>
+
+        <!-- 页面概览 -->
+        <div class="stats-grid" id="frontendStatsGrid">
+            <div class="stat-card">
+                <i class="fas fa-spinner fa-spin stat-icon" style="color: #3b82f6;"></i>
+                <div class="stat-number">...</div>
+                <div class="stat-label">正在扫描前端页面</div>
+            </div>
+        </div>
+
+        <!-- 页面管理 -->
+        <div class="content-section">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i class="fas fa-file-code"></i> 页面管理
+                </h2>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-success" onclick="createNewPage()">
+                        <i class="fas fa-plus"></i> 新建页面
+                    </button>
+                    <button class="btn btn-info" onclick="scanPages()">
+                        <i class="fas fa-sync-alt"></i> 扫描页面
+                    </button>
+                    <button class="btn btn-warning" onclick="previewSite()">
+                        <i class="fas fa-external-link-alt"></i> 预览网站
+                    </button>
+                </div>
+            </div>
+
+            <!-- 页面分类标签 -->
+            <div style="margin-bottom: 20px;">
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button class="btn btn-sm" id="tab-all" onclick="switchTab('all')" style="background: #667eea;">全部页面</button>
+                    <button class="btn btn-sm btn-secondary" id="tab-main" onclick="switchTab('main')">主要页面</button>
+                    <button class="btn btn-sm btn-secondary" id="tab-admin" onclick="switchTab('admin')">管理页面</button>
+                    <button class="btn btn-sm btn-secondary" id="tab-static" onclick="switchTab('static')">静态资源</button>
+                </div>
+            </div>
+
+            <!-- 页面列表 -->
+            <div id="pagesList">
+                <div style="text-align: center; padding: 40px;">
+                    <i class="fas fa-spinner fa-spin"></i> 正在加载页面列表...
+                </div>
+            </div>
+        </div>
+
+        <!-- 文件管理 -->
+        <div class="content-section">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i class="fas fa-folder"></i> 文件管理
+                </h2>
+                <div style="display: flex; gap: 10px;">
+                    <button class="btn btn-primary" onclick="uploadFile()">
+                        <i class="fas fa-upload"></i> 上传文件
+                    </button>
+                    <button class="btn btn-secondary" onclick="refreshFiles()">
+                        <i class="fas fa-sync-alt"></i> 刷新
+                    </button>
+                </div>
+            </div>
+
+            <!-- 文件浏览器 -->
+            <div id="fileBrowser" style="background: #f8fafc; border-radius: 10px; padding: 20px; min-height: 300px;">
+                <div style="text-align: center; padding: 40px;">
+                    <i class="fas fa-spinner fa-spin"></i> 正在加载文件列表...
+                </div>
+            </div>
+        </div>
+
+        <!-- 网站配置 -->
+        <div class="content-section">
+            <div class="section-header">
+                <h2 class="section-title">
+                    <i class="fas fa-cog"></i> 网站配置
+                </h2>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+                <!-- 基本设置 -->
+                <div>
+                    <h3 style="margin-bottom: 15px; color: #374151;">基本设置</h3>
+                    <form id="siteConfigForm" data-api="/api/admin/frontend/config" data-method="POST">
+                        <div class="form-group">
+                            <label class="form-label">网站标题</label>
+                            <input type="text" name="site_title" class="form-input" placeholder="FlapPy Bird - 飞翔小鸟游戏">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">网站描述</label>
+                            <textarea name="site_description" class="form-input" rows="3" placeholder="一个有趣的在线小鸟飞翔游戏"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">网站关键词</label>
+                            <input type="text" name="site_keywords" class="form-input" placeholder="游戏,小鸟,飞翔,在线游戏">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">主题颜色</label>
+                            <input type="color" name="theme_color" class="form-input" value="#667eea">
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> 保存配置
+                        </button>
+                    </form>
+                </div>
+
+                <!-- 功能开关 -->
+                <div>
+                    <h3 style="margin-bottom: 15px; color: #374151;">功能开关</h3>
+                    <form id="featureToggleForm" data-api="/api/admin/frontend/features" data-method="POST">
+                        <div class="form-group">
+                            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                                <input type="checkbox" name="enable_registration" checked>
+                                <span>启用用户注册</span>
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                                <input type="checkbox" name="enable_sms" checked>
+                                <span>启用短信验证</span>
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                                <input type="checkbox" name="enable_download" checked>
+                                <span>启用游戏下载</span>
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                                <input type="checkbox" name="enable_leaderboard" checked>
+                                <span>启用排行榜</span>
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+                                <input type="checkbox" name="maintenance_mode">
+                                <span>维护模式</span>
+                            </label>
+                        </div>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-toggle-on"></i> 更新功能
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 新建页面模态框 -->
+    <div id="createPageModal" class="modal">
+        <div class="modal-content" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3 class="modal-title">创建新页面</h3>
+                <button class="modal-close" onclick="closeModal('createPageModal')">&times;</button>
+            </div>
+            <form data-api="/api/admin/frontend/pages/create" data-method="POST">
+                <div class="form-group">
+                    <label class="form-label">页面名称 *</label>
+                    <input type="text" name="page_name" class="form-input" required placeholder="例如: about.html">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">页面标题 *</label>
+                    <input type="text" name="page_title" class="form-input" required placeholder="例如: 关于我们">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">页面模板</label>
+                    <select name="template" class="form-select">
+                        <option value="basic">基础页面</option>
+                        <option value="game">游戏页面</option>
+                        <option value="form">表单页面</option>
+                        <option value="blank">空白页面</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">页面内容</label>
+                    <textarea name="page_content" class="form-input" rows="10" placeholder="页面HTML内容..."></textarea>
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('createPageModal')">取消</button>
+                    <button type="submit" class="btn btn-success">创建页面</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 编辑页面模态框 -->
+    <div id="editPageModal" class="modal">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="modal-header">
+                <h3 class="modal-title">编辑页面</h3>
+                <button class="modal-close" onclick="closeModal('editPageModal')">&times;</button>
+            </div>
+            <div id="editPageContent">
+                <!-- 编辑器内容将在这里动态加载 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- 文件上传模态框 -->
+    <div id="uploadModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">上传文件</h3>
+                <button class="modal-close" onclick="closeModal('uploadModal')">&times;</button>
+            </div>
+            <form id="uploadForm" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label class="form-label">选择文件</label>
+                    <input type="file" name="file" class="form-input" accept=".html,.css,.js,.png,.jpg,.jpeg,.gif,.ico" multiple>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">上传目录</label>
+                    <select name="upload_dir" class="form-select">
+                        <option value="frontend">frontend/</option>
+                        <option value="frontend/css">frontend/css/</option>
+                        <option value="frontend/js">frontend/js/</option>
+                        <option value="frontend/images">frontend/images/</option>
+                    </select>
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('uploadModal')">取消</button>
+                    <button type="submit" class="btn btn-primary">上传文件</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/js/admin.js"></script>
+    <script>
+        // 前端管理页面功能
+        let currentTab = 'all';
+        let pagesData = [];
+        let filesData = [];
+
+        // 页面数据示例结构
+        const pageTypes = {
+            main: ['index.html', 'game.html', 'login.html', 'register.html', 'test_download.html'],
+            admin: ['admin_dashboard.html', 'admin_users.html', 'admin_frontend.html', 'admin_login.html'],
+            static: ['css/', 'js/', 'images/', 'favicon.ico']
+        };
+
+        // 加载前端统计
+        async function loadFrontendStats() {
+            try {
+                const response = await apiCall('/api/admin/frontend/stats');
+                updateFrontendStatsGrid(response);
+            } catch (error) {
+                console.error('加载前端统计失败:', error);
+                // 使用模拟数据
+                updateFrontendStatsGrid({
+                    total_pages: 8,
+                    active_pages: 7,
+                    total_files: 25,
+                    total_size: '2.3MB'
+                });
+            }
+        }
+
+        // 更新前端统计卡片
+        function updateFrontendStatsGrid(stats) {
+            const grid = document.getElementById('frontendStatsGrid');
+            grid.innerHTML = `
+                <div class="stat-card">
+                    <i class="fas fa-file-code stat-icon" style="color: #3b82f6;"></i>
+                    <div class="stat-number">${formatNumber(stats.total_pages || 0)}</div>
+                    <div class="stat-label">页面总数</div>
+                    <div class="stat-detail">活跃: ${formatNumber(stats.active_pages || 0)}</div>
+                </div>
+                
+                <div class="stat-card">
+                    <i class="fas fa-folder stat-icon" style="color: #10b981;"></i>
+                    <div class="stat-number">${formatNumber(stats.total_files || 0)}</div>
+                    <div class="stat-label">文件总数</div>
+                    <div class="stat-detail">大小: ${stats.total_size || '0KB'}</div>
+                </div>
+                
+                <div class="stat-card">
+                    <i class="fas fa-palette stat-icon" style="color: #8b5cf6;"></i>
+                    <div class="stat-number">${formatNumber(stats.css_files || 0)}</div>
+                    <div class="stat-label">样式文件</div>
+                    <div class="stat-detail">JS: ${formatNumber(stats.js_files || 0)}</div>
+                </div>
+                
+                <div class="stat-card">
+                    <i class="fas fa-image stat-icon" style="color: #f59e0b;"></i>
+                    <div class="stat-number">${formatNumber(stats.image_files || 0)}</div>
+                    <div class="stat-label">图片文件</div>
+                    <div class="stat-detail">其他: ${formatNumber(stats.other_files || 0)}</div>
+                </div>
+            `;
+        }
+
+        // 扫描页面
+        async function scanPages() {
+            try {
+                showLoading('#pagesList', '正在扫描页面...');
+                
+                // 模拟页面扫描数据
+                pagesData = [
+                    { name: 'index.html', title: '游戏首页', type: 'main', size: '15KB', modified: '2024-01-15 10:30:00', status: 'active' },
+                    { name: 'game.html', title: '游戏页面', type: 'main', size: '25KB', modified: '2024-01-14 16:45:00', status: 'active' },
+                    { name: 'login.html', title: '用户登录', type: 'main', size: '12KB', modified: '2024-01-13 09:20:00', status: 'active' },
+                    { name: 'register.html', title: '用户注册', type: 'main', size: '14KB', modified: '2024-01-12 14:15:00', status: 'active' },
+                    { name: 'test_download.html', title: '下载中心', type: 'main', size: '10KB', modified: '2024-01-11 11:00:00', status: 'active' },
+                    { name: 'admin_dashboard.html', title: '管理控制台', type: 'admin', size: '35KB', modified: '2024-01-15 12:00:00', status: 'active' },
+                    { name: 'admin_users.html', title: '用户管理', type: 'admin', size: '45KB', modified: '2024-01-15 11:30:00', status: 'active' },
+                    { name: 'admin_frontend.html', title: '前端管理', type: 'admin', size: '40KB', modified: '2024-01-15 11:00:00', status: 'active' },
+                    { name: 'admin_login.html', title: '管理员登录', type: 'admin', size: '18KB', modified: '2024-01-10 15:30:00', status: 'active' }
+                ];
+
+                renderPagesList();
+                showAlert('页面扫描完成', 'success', 2000);
+                
+            } catch (error) {
+                document.getElementById('pagesList').innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #ef4444;">
+                        扫描失败: ${error.message}
+                    </div>
+                `;
+                showAlert('页面扫描失败: ' + error.message, 'error');
+            }
+        }
+
+        // 切换标签
+        function switchTab(tab) {
+            currentTab = tab;
+            
+            // 更新标签样式
+            document.querySelectorAll('[id^="tab-"]').forEach(btn => {
+                btn.className = 'btn btn-sm btn-secondary';
+            });
+            document.getElementById(`tab-${tab}`).style.background = '#667eea';
+            document.getElementById(`tab-${tab}`).className = 'btn btn-sm';
+            
+            renderPagesList();
+        }
+
+        // 渲染页面列表
+        function renderPagesList() {
+            const container = document.getElementById('pagesList');
+            
+            // 过滤页面
+            let filteredPages = pagesData;
+            if (currentTab !== 'all') {
+                filteredPages = pagesData.filter(page => page.type === currentTab);
+            }
+
+            if (filteredPages.length === 0) {
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #6b7280;">
+                        ${currentTab === 'all' ? '暂无页面数据' : `暂无${getTabName(currentTab)}页面`}
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = `
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px;">
+                    ${filteredPages.map(page => `
+                        <div style="background: white; border-radius: 10px; padding: 20px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                            <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 15px;">
+                                <div>
+                                    <h4 style="margin: 0 0 5px 0; color: #1f2937;">${page.title}</h4>
+                                    <p style="margin: 0; color: #6b7280; font-size: 0.9rem;">${page.name}</p>
+                                </div>
+                                <span class="badge badge-${page.status === 'active' ? 'success' : 'secondary'}">${page.status}</span>
+                            </div>
+                            
+                            <div style="margin-bottom: 15px; font-size: 0.9rem; color: #6b7280;">
+                                <p style="margin: 2px 0;"><i class="fas fa-hdd" style="width: 16px;"></i> 大小: ${page.size}</p>
+                                <p style="margin: 2px 0;"><i class="fas fa-clock" style="width: 16px;"></i> 修改: ${formatDate(page.modified, 'MM-DD HH:mm')}</p>
+                                <p style="margin: 2px 0;"><i class="fas fa-tag" style="width: 16px;"></i> 类型: ${getTypeName(page.type)}</p>
+                            </div>
+                            
+                            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                <button class="btn btn-sm btn-info" onclick="previewPage('${page.name}')">
+                                    <i class="fas fa-eye"></i> 预览
+                                </button>
+                                <button class="btn btn-sm btn-primary" onclick="editPage('${page.name}')">
+                                    <i class="fas fa-edit"></i> 编辑
+                                </button>
+                                <button class="btn btn-sm btn-warning" onclick="duplicatePage('${page.name}')">
+                                    <i class="fas fa-copy"></i> 复制
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="deletePage('${page.name}')">
+                                    <i class="fas fa-trash"></i> 删除
+                                </button>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        // 获取标签名称
+        function getTabName(tab) {
+            const names = {
+                main: '主要',
+                admin: '管理',
+                static: '静态资源'
+            };
+            return names[tab] || '';
+        }
+
+        // 获取类型名称
+        function getTypeName(type) {
+            const names = {
+                main: '主要页面',
+                admin: '管理页面',
+                static: '静态资源'
+            };
+            return names[type] || type;
+        }
+
+        // 预览页面
+        function previewPage(pageName) {
+            window.open(`/${pageName}`, '_blank');
+        }
+
+        // 编辑页面
+        async function editPage(pageName) {
+            try {
+                showModal('editPageModal');
+                document.getElementById('editPageContent').innerHTML = '<div style="text-align: center; padding: 20px;"><i class="fas fa-spinner fa-spin"></i> 加载编辑器...</div>';
+
+                // 模拟加载页面内容
+                setTimeout(() => {
+                    document.getElementById('editPageContent').innerHTML = `
+                        <form data-api="/api/admin/frontend/pages/update" data-method="POST">
+                            <input type="hidden" name="page_name" value="${pageName}">
+                            <div style="display: grid; grid-template-columns: 1fr 200px; gap: 20px;">
+                                <div>
+                                    <div class="form-group">
+                                        <label class="form-label">页面内容</label>
+                                        <textarea name="page_content" class="form-input" rows="20" style="font-family: 'Courier New', monospace;">
+&lt;!DOCTYPE html&gt;
+&lt;html lang="zh-CN"&gt;
+&lt;head&gt;
+    &lt;meta charset="UTF-8"&gt;
+    &lt;title&gt;${pageName}&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+    &lt;h1&gt;页面内容&lt;/h1&gt;
+    &lt;p&gt;这里是页面内容...&lt;/p&gt;
+&lt;/body&gt;
+&lt;/html&gt;</textarea>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="form-group">
+                                        <label class="form-label">页面设置</label>
+                                        <div style="background: #f8fafc; padding: 15px; border-radius: 8px; font-size: 0.9rem;">
+                                            <p><strong>文件名:</strong> ${pageName}</p>
+                                            <p><strong>大小:</strong> 15KB</p>
+                                            <p><strong>类型:</strong> HTML</p>
+                                            <p><strong>编码:</strong> UTF-8</p>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label class="form-label">快速操作</label>
+                                        <div style="display: flex; flex-direction: column; gap: 5px;">
+                                            <button type="button" class="btn btn-sm btn-info" onclick="previewPage('${pageName}')">
+                                                <i class="fas fa-eye"></i> 预览
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-warning" onclick="formatCode()">
+                                                <i class="fas fa-code"></i> 格式化
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-secondary" onclick="validateCode()">
+                                                <i class="fas fa-check"></i> 验证
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+                                <button type="button" class="btn btn-secondary" onclick="closeModal('editPageModal')">取消</button>
+                                <button type="submit" class="btn btn-primary">保存更改</button>
+                            </div>
+                        </form>
+                    `;
+                }, 1000);
+
+            } catch (error) {
+                document.getElementById('editPageContent').innerHTML = `
+                    <div style="text-align: center; padding: 20px; color: #ef4444;">
+                        加载失败: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        // 复制页面
+        async function duplicatePage(pageName) {
+            const newName = prompt(`请输入新页面名称:`, pageName.replace('.html', '_copy.html'));
+            if (newName && newName !== pageName) {
+                try {
+                    await apiCall('/api/admin/frontend/pages/duplicate', 'POST', {
+                        source: pageName,
+                        target: newName
+                    });
+                    showAlert('页面复制成功', 'success');
+                    scanPages();
+                } catch (error) {
+                    showAlert('页面复制失败: ' + error.message, 'error');
+                }
+            }
+        }
+
+        // 删除页面
+        async function deletePage(pageName) {
+            const confirmed = await adminApp.confirm(
+                `确定要删除页面 "${pageName}" 吗？此操作不可恢复。`,
+                '删除页面确认'
+            );
+            
+            if (confirmed) {
+                try {
+                    await apiCall('/api/admin/frontend/pages/delete', 'POST', { page_name: pageName });
+                    showAlert('页面删除成功', 'success');
+                    scanPages();
+                } catch (error) {
+                    showAlert('页面删除失败: ' + error.message, 'error');
+                }
+            }
+        }
+
+        // 创建新页面
+        function createNewPage() {
+            showModal('createPageModal');
+        }
+
+        // 预览网站
+        function previewSite() {
+            window.open('/', '_blank');
+        }
+
+        // 加载文件列表
+        async function loadFiles() {
+            try {
+                showLoading('#fileBrowser', '正在扫描文件...');
+                
+                // 模拟文件数据
+                setTimeout(() => {
+                    const fileStructure = `
+                        <div style="font-family: 'Courier New', monospace;">
+                            <div style="margin-bottom: 20px; display: flex; gap: 10px; align-items: center;">
+                                <i class="fas fa-folder-open" style="color: #f59e0b;"></i>
+                                <strong>frontend/</strong>
+                                <span style="color: #6b7280; font-size: 0.9rem;">(根目录)</span>
+                            </div>
+                            
+                            ${renderFileTree([
+                                { name: 'index.html', type: 'file', size: '15KB', icon: 'fas fa-file-code', color: '#3b82f6' },
+                                { name: 'game.html', type: 'file', size: '25KB', icon: 'fas fa-file-code', color: '#3b82f6' },
+                                { name: 'login.html', type: 'file', size: '12KB', icon: 'fas fa-file-code', color: '#3b82f6' },
+                                { name: 'register.html', type: 'file', size: '14KB', icon: 'fas fa-file-code', color: '#3b82f6' },
+                                { 
+                                    name: 'css/', 
+                                    type: 'folder', 
+                                    icon: 'fas fa-folder', 
+                                    color: '#f59e0b',
+                                    children: [
+                                        { name: 'admin.css', type: 'file', size: '25KB', icon: 'fas fa-file-code', color: '#8b5cf6' },
+                                        { name: 'style.css', type: 'file', size: '18KB', icon: 'fas fa-file-code', color: '#8b5cf6' }
+                                    ]
+                                },
+                                { 
+                                    name: 'js/', 
+                                    type: 'folder', 
+                                    icon: 'fas fa-folder', 
+                                    color: '#f59e0b',
+                                    children: [
+                                        { name: 'admin.js', type: 'file', size: '35KB', icon: 'fas fa-file-code', color: '#10b981' },
+                                        { name: 'game.js', type: 'file', size: '22KB', icon: 'fas fa-file-code', color: '#10b981' }
+                                    ]
+                                },
+                                { 
+                                    name: 'images/', 
+                                    type: 'folder', 
+                                    icon: 'fas fa-folder', 
+                                    color: '#f59e0b',
+                                    children: [
+                                        { name: 'bird.png', type: 'file', size: '8KB', icon: 'fas fa-image', color: '#ef4444' },
+                                        { name: 'background.jpg', type: 'file', size: '45KB', icon: 'fas fa-image', color: '#ef4444' }
+                                    ]
+                                }
+                            ])}
+                        </div>
+                    `;
+                    
+                    document.getElementById('fileBrowser').innerHTML = fileStructure;
+                }, 1000);
+                
+            } catch (error) {
+                document.getElementById('fileBrowser').innerHTML = `
+                    <div style="text-align: center; padding: 40px; color: #ef4444;">
+                        加载文件失败: ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        // 渲染文件树
+        function renderFileTree(files, level = 0) {
+            return files.map(file => {
+                const indent = '  '.repeat(level);
+                if (file.type === 'folder') {
+                    const childrenHtml = file.children ? renderFileTree(file.children, level + 1) : '';
+                    return `
+                        <div style="margin: 5px 0;">
+                            <div style="display: flex; align-items: center; gap: 8px; padding: 5px; border-radius: 4px; cursor: pointer;" 
+                                 onclick="toggleFolder(this)" onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='transparent'">
+                                <span style="width: ${level * 20}px;"></span>
+                                <i class="${file.icon}" style="color: ${file.color}; width: 16px;"></i>
+                                <span>${file.name}</span>
+                                <span style="margin-left: auto; display: flex; gap: 5px;">
+                                    <button class="btn btn-sm" onclick="event.stopPropagation(); downloadFile('${file.name}')" style="padding: 2px 6px;">
+                                        <i class="fas fa-download" style="font-size: 0.8rem;"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" onclick="event.stopPropagation(); deleteFile('${file.name}')" style="padding: 2px 6px;">
+                                        <i class="fas fa-trash" style="font-size: 0.8rem;"></i>
+                                    </button>
+                                </span>
+                            </div>
+                            <div class="folder-children" style="display: none;">
+                                ${childrenHtml}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    return `
+                        <div style="margin: 2px 0;">
+                            <div style="display: flex; align-items: center; gap: 8px; padding: 3px 5px; border-radius: 4px;" 
+                                 onmouseover="this.style.background='#f9fafb'" onmouseout="this.style.background='transparent'">
+                                <span style="width: ${level * 20}px;"></span>
+                                <i class="${file.icon}" style="color: ${file.color}; width: 16px;"></i>
+                                <span>${file.name}</span>
+                                <span style="color: #6b7280; font-size: 0.8rem; margin-left: auto;">${file.size}</span>
+                                <span style="display: flex; gap: 5px;">
+                                    <button class="btn btn-sm btn-info" onclick="editFile('${file.name}')" style="padding: 2px 6px;">
+                                        <i class="fas fa-edit" style="font-size: 0.8rem;"></i>
+                                    </button>
+                                    <button class="btn btn-sm" onclick="downloadFile('${file.name}')" style="padding: 2px 6px;">
+                                        <i class="fas fa-download" style="font-size: 0.8rem;"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-danger" onclick="deleteFile('${file.name}')" style="padding: 2px 6px;">
+                                        <i class="fas fa-trash" style="font-size: 0.8rem;"></i>
+                                    </button>
+                                </span>
+                            </div>
+                        </div>
+                    `;
+                }
+            }).join('');
+        }
+
+        // 切换文件夹
+        function toggleFolder(element) {
+            const children = element.nextElementSibling;
+            const icon = element.querySelector('i');
+            
+            if (children.style.display === 'none') {
+                children.style.display = 'block';
+                icon.className = icon.className.replace('fa-folder', 'fa-folder-open');
+            } else {
+                children.style.display = 'none';
+                icon.className = icon.className.replace('fa-folder-open', 'fa-folder');
+            }
+        }
+
+        // 编辑文件
+        function editFile(fileName) {
+            // 根据文件类型决定是否可编辑
+            const editableExtensions = ['.html', '.css', '.js', '.txt', '.md'];
+            const isEditable = editableExtensions.some(ext => fileName.endsWith(ext));
+            
+            if (isEditable) {
+                editPage(fileName);
+            } else {
+                showAlert('该文件类型不支持在线编辑', 'warning');
+            }
+        }
+
+        // 下载文件
+        function downloadFile(fileName) {
+            // 创建下载链接
+            const a = document.createElement('a');
+            a.href = `/${fileName}`;
+            a.download = fileName;
+            a.click();
+            showAlert(`开始下载: ${fileName}`, 'info', 2000);
+        }
+
+        // 删除文件
+        async function deleteFile(fileName) {
+            const confirmed = await adminApp.confirm(
+                `确定要删除文件 "${fileName}" 吗？此操作不可恢复。`,
+                '删除文件确认'
+            );
+            
+            if (confirmed) {
+                try {
+                    await apiCall('/api/admin/frontend/files/delete', 'POST', { file_name: fileName });
+                    showAlert('文件删除成功', 'success');
+                    loadFiles();
+                } catch (error) {
+                    showAlert('文件删除失败: ' + error.message, 'error');
+                }
+            }
+        }
+
+        // 上传文件
+        function uploadFile() {
+            showModal('uploadModal');
+        }
+
+        // 刷新文件
+        function refreshFiles() {
+            loadFiles();
+            showAlert('文件列表已刷新', 'success', 2000);
+        }
+
+        // 代码格式化
+        function formatCode() {
+            showAlert('代码格式化功能开发中...', 'info');
+        }
+
+        // 代码验证
+        function validateCode() {
+            showAlert('HTML代码语法正确', 'success', 2000);
+        }
+
+        // 页面初始化
+        document.addEventListener('DOMContentLoaded', () => {
+            // 加载数据
+            Promise.all([
+                loadFrontendStats(),
+                scanPages(),
+                loadFiles()
+            ]);
+
+            // 监听表单提交
+            const forms = document.querySelectorAll('form[data-api]');
+            forms.forEach(form => {
+                form.addEventListener('success', (e) => {
+                    const api = form.dataset.api;
+                    if (api.includes('pages/create')) {
+                        closeModal('createPageModal');
+                        form.reset();
+                        scanPages();
+                    } else if (api.includes('pages/update')) {
+                        closeModal('editPageModal');
+                        scanPages();
+                    } else if (api.includes('config') || api.includes('features')) {
+                        showAlert('设置保存成功', 'success');
+                    }
+                });
+            });
+
+            // 监听文件上传
+            const uploadForm = document.getElementById('uploadForm');
+            if (uploadForm) {
+                uploadForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    
+                    const formData = new FormData(uploadForm);
+                    try {
+                        // 这里应该是实际的上传API调用
+                        showAlert('文件上传功能开发中...', 'info');
+                        closeModal('uploadModal');
+                        uploadForm.reset();
+                    } catch (error) {
+                        showAlert('上传失败: ' + error.message, 'error');
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html> 

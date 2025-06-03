@@ -1,0 +1,17 @@
+{
+  "ea06de05c630bb521d27af46f24e7e6e": {
+    "username": "admin",
+    "password_hash": "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9",
+    "email": "admin@flappybird.com",
+    "role": "super_admin",
+    "created_at": "2025-06-03T21:22:40.472129",
+    "last_login": null,
+    "is_active": true,
+    "permissions": [
+      "user_management",
+      "system_management",
+      "data_management",
+      "admin_management"
+    ]
+  }
+}

@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>管理员管理 - FlapPy Bird 管理后台</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="css/admin.css" rel="stylesheet">
+</head>
+<body>
+    <div class="admin-container">
+        <!-- 侧边栏 -->
+        <aside class="admin-sidebar">
+            <div class="sidebar-header">
+                <h2 class="sidebar-title">
+                    <i class="fas fa-gamepad"></i> 
+                    FlapPy Bird
+                </h2>
+            </div>
+            <div class="sidebar-nav">
+                <a href="/admin_dashboard.html" class="nav-item">
+                    <i class="fas fa-tachometer-alt"></i> 系统概览
+                </a>
+                <a href="/admin_users.html" class="nav-item">
+                    <i class="fas fa-users"></i> 用户管理
+                </a>
+                <a href="/admin_frontend.html" class="nav-item">
+                    <i class="fas fa-palette"></i> 前端管理
+                </a>
+                <a href="/admin_admins.html" class="nav-item active">
+                    <i class="fas fa-user-shield"></i> 管理员管理
+                </a>
+                <a href="/admin_system.html" class="nav-item">
+                    <i class="fas fa-cogs"></i> 系统设置
+                </a>
+                <a href="/admin_logs.html" class="nav-item">
+                    <i class="fas fa-file-alt"></i> 系统日志
+                </a>
+            </div>
+        </aside>
+
+        <main class="admin-main">
+            <!-- 顶部栏 -->
+            <header class="admin-header">
+                <div class="header-left">
+                    <button class="toggle-sidebar">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <h1 class="header-title">管理员管理</h1>
+                </div>
+                <div class="header-right">
+                    <div class="admin-user">
+                        <i class="fas fa-user-shield"></i>
+                        <span>加载中...</span>
+                    </div>
+                    <button class="logout-btn">
+                        <i class="fas fa-sign-out-alt"></i> 登出
+                    </button>
+                </div>
+            </header>
+
+            <!-- 管理员列表 -->
+            <div class="content-section">
+                <div class="section-header">
+                    <h2 class="section-title">
+                        <i class="fas fa-user-shield"></i> 管理员列表
+                    </h2>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn btn-success" onclick="showCreateAdminModal()">
+                            <i class="fas fa-user-plus"></i> 添加管理员
+                        </button>
+                        <button class="btn btn-secondary" onclick="refreshAdmins()">
+                            <i class="fas fa-sync-alt"></i> 刷新
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 搜索框 -->
+                <div class="search-bar">
+                    <input type="text" id="searchInput" class="search-input" placeholder="搜索管理员..." onkeyup="filterAdmins()">
+                </div>
+
+                <!-- 管理员表格 -->
+                <div style="overflow-x: auto;">
+                    <table class="data-table" id="adminsTable">
+                        <thead>
+                            <tr>
+                                <th>管理员</th>
+                                <th>邮箱</th>
+                                <th>角色</th>
+                                <th>状态</th>
+                                <th>注册时间</th>
+                                <th>最后登录</th>
+                                <th>操作</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminsTableBody">
+                            <tr>
+                                <td colspan="7" style="text-align: center; padding: 40px;">
+                                    <i class="fas fa-spinner fa-spin" style="margin-right: 8px;"></i>网络错误，请稍后重试
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 创建管理员模态框 -->
+    <div id="createAdminModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">添加管理员</h3>
+                <button class="modal-close" onclick="closeModal('createAdminModal')">&times;</button>
+            </div>
+            <form id="createAdminForm">
+                <div class="form-group">
+                    <label class="form-label">用户名 *</label>
+                    <input type="text" name="username" class="form-input" required placeholder="请输入管理员用户名">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">密码 *</label>
+                    <input type="password" name="password" class="form-input" required placeholder="请输入密码">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">邮箱</label>
+                    <input type="email" name="email" class="form-input" placeholder="请输入邮箱地址（可选）">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">角色</label>
+                    <select name="role" class="form-select">
+                        <option value="admin">普通管理员</option>
+                        <option value="super_admin">超级管理员</option>
+                    </select>
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('createAdminModal')">取消</button>
+                    <button type="submit" class="btn btn-success">创建管理员</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 编辑管理员模态框 -->
+    <div id="editAdminModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">编辑管理员</h3>
+                <button class="modal-close" onclick="closeModal('editAdminModal')">&times;</button>
+            </div>
+            <form id="editAdminForm">
+                <input type="hidden" name="admin_id" id="editAdminId">
+                <div class="form-group">
+                    <label class="form-label">用户名</label>
+                    <input type="text" name="username" id="editUsername" class="form-input" readonly>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">邮箱</label>
+                    <input type="email" name="email" id="editEmail" class="form-input">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">角色</label>
+                    <select name="role" id="editRole" class="form-select">
+                        <option value="admin">普通管理员</option>
+                        <option value="super_admin">超级管理员</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">新密码</label>
+                    <input type="password" name="password" id="editPassword" class="form-input" placeholder="不修改请留空">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">状态</label>
+                    <select name="is_active" id="editStatus" class="form-select">
+                        <option value="true">正常</option>
+                        <option value="false">禁用</option>
+                    </select>
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal('editAdminModal')">取消</button>
+                    <button type="submit" class="btn btn-primary">保存修改</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/admin.js"></script>
+    <script>
+        let adminsData = [];
+        let adminApp;
+
+        // 页面加载
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化AdminApp
+            adminApp = new AdminApp();
+            
+            // 等待认证完成后加载数据
+            setTimeout(() => {
+                checkAdminRole();
+                loadAdmins();
+            }, 500);
+        });
+
+        // 检查管理员角色
+        function checkAdminRole() {
+            const adminInfo = JSON.parse(localStorage.getItem('admin_info') || '{}');
+            if (adminInfo.role !== 'super_admin') {
+                // 不是超级管理员，隐藏管理功能
+                document.querySelector('.section-header .btn-success').style.display = 'none';
+                document.getElementById('adminsTableBody').innerHTML = 
+                    '<tr><td colspan="7" style="text-align: center; padding: 40px; color: orange;"><i class="fas fa-lock" style="margin-right: 8px;"></i>只有超级管理员才能查看和管理其他管理员</td></tr>';
+                return false;
+            }
+            return true;
+        }
+
+        // 加载管理员列表
+        async function loadAdmins() {
+            // 如果不是超级管理员，不加载数据
+            if (!checkAdminRole()) {
+                return;
+            }
+            
+            try {
+                const response = await adminApp.apiCall('/api/admin/admins', 'GET');
+                
+                if (response.success) {
+                    adminsData = response.data;
+                    displayAdmins(adminsData);
+                } else {
+                    document.getElementById('adminsTableBody').innerHTML = 
+                        '<tr><td colspan="7" style="text-align: center; padding: 40px; color: red;">加载失败: ' + response.message + '</td></tr>';
+                }
+            } catch (error) {
+                console.error('加载管理员列表失败:', error);
+                document.getElementById('adminsTableBody').innerHTML = 
+                    '<tr><td colspan="7" style="text-align: center; padding: 40px; color: red;">加载失败: ' + error.message + '</td></tr>';
+            }
+        }
+
+        // 显示管理员列表
+        function displayAdmins(admins) {
+            const tbody = document.getElementById('adminsTableBody');
+            
+            if (admins.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px;">暂无管理员数据</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = admins.map(admin => `
+                <tr>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <i class="fas fa-user-shield" style="color: ${admin.role === 'super_admin' ? '#ff6b6b' : '#4ecdc4'};"></i>
+                            <strong>${admin.username}</strong>
+                        </div>
+                    </td>
+                    <td>${admin.email || '未设置'}</td>
+                    <td>
+                        <span class="badge ${admin.role === 'super_admin' ? 'badge-danger' : 'badge-info'}">
+                            ${admin.role === 'super_admin' ? '超级管理员' : '普通管理员'}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge ${admin.is_active ? 'badge-success' : 'badge-secondary'}">
+                            ${admin.is_active ? '正常' : '禁用'}
+                        </span>
+                    </td>
+                    <td>${admin.created_at ? new Date(admin.created_at).toLocaleString() : '-'}</td>
+                    <td>${admin.last_login ? new Date(admin.last_login).toLocaleString() : '从未登录'}</td>
+                    <td>
+                        <button class="btn btn-sm btn-primary" onclick="editAdmin('${admin.admin_id}')">编辑</button>
+                        ${admin.role !== 'super_admin' ? `<button class="btn btn-sm btn-danger" onclick="deleteAdmin('${admin.admin_id}', '${admin.username}')">删除</button>` : ''}
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // 搜索管理员
+        function filterAdmins() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = adminsData.filter(admin => 
+                admin.username.toLowerCase().includes(searchTerm) ||
+                (admin.email && admin.email.toLowerCase().includes(searchTerm))
+            );
+            displayAdmins(filtered);
+        }
+
+        // 显示创建管理员模态框
+        function showCreateAdminModal() {
+            adminApp.showModal('createAdminModal');
+        }
+
+        // 创建管理员表单提交
+        document.getElementById('createAdminForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData);
+            
+            try {
+                const response = await adminApp.apiCall('/api/admin/admins', 'POST', data);
+                
+                if (response.success) {
+                    adminApp.showAlert('管理员创建成功', 'success');
+                    adminApp.closeModal('createAdminModal');
+                    this.reset();
+                    loadAdmins();
+                } else {
+                    adminApp.showAlert('创建失败: ' + response.message, 'error');
+                }
+            } catch (error) {
+                adminApp.showAlert('创建失败: ' + error.message, 'error');
+            }
+        });
+
+        // 编辑管理员
+        function editAdmin(adminId) {
+            const admin = adminsData.find(a => a.admin_id === adminId);
+            if (!admin) return;
+
+            document.getElementById('editAdminId').value = admin.admin_id;
+            document.getElementById('editUsername').value = admin.username;
+            document.getElementById('editEmail').value = admin.email || '';
+            document.getElementById('editRole').value = admin.role;
+            document.getElementById('editStatus').value = admin.is_active.toString();
+            document.getElementById('editPassword').value = '';
+
+            adminApp.showModal('editAdminModal');
+        }
+
+        // 编辑管理员表单提交
+        document.getElementById('editAdminForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const data = Object.fromEntries(formData);
+            const adminId = data.admin_id;
+            delete data.admin_id;
+            
+            // 如果密码为空，则不发送密码字段
+            if (!data.password) {
+                delete data.password;
+            }
+            
+            try {
+                const response = await adminApp.apiCall(`/api/admin/admins/${adminId}`, 'PUT', data);
+                
+                if (response.success) {
+                    adminApp.showAlert('管理员信息更新成功', 'success');
+                    adminApp.closeModal('editAdminModal');
+                    loadAdmins();
+                } else {
+                    adminApp.showAlert('更新失败: ' + response.message, 'error');
+                }
+            } catch (error) {
+                adminApp.showAlert('更新失败: ' + error.message, 'error');
+            }
+        });
+
+        // 删除管理员
+        function deleteAdmin(adminId, username) {
+            if (confirm(`确定要删除管理员 "${username}" 吗？此操作不可恢复。`)) {
+                adminApp.apiCall(`/api/admin/admins/${adminId}`, 'DELETE')
+                .then(response => {
+                    if (response.success) {
+                        adminApp.showAlert('管理员删除成功', 'success');
+                        loadAdmins();
+                    } else {
+                        adminApp.showAlert('删除失败: ' + response.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    adminApp.showAlert('删除失败: ' + error.message, 'error');
+                });
+            }
+        }
+
+        // 刷新管理员列表
+        function refreshAdmins() {
+            loadAdmins();
+            adminApp.showAlert('管理员列表已刷新', 'success');
+        }
+
+        // 提供全局函数给模态框使用
+        function showModal(modalId) {
+            adminApp.showModal(modalId);
+        }
+
+        function closeModal(modalId) {
+            adminApp.closeModal(modalId);
+        }
+
+        function showNotification(message, type) {
+            adminApp.showAlert(message, type);
+        }
+    </script>
+</body>
+</html> 

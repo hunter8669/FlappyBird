@@ -1,0 +1,169 @@
+{
+  "admin_66cfcf46fe8e9cee6d97fefe2bbbb8141d19b05f135fbfd546864c679a1c7f91": {
+    "admin_id": "admin",
+    "username": "admin",
+    "role": "super_admin",
+    "permissions": [
+      "user_management",
+      "system_management",
+      "data_management",
+      "admin_management"
+    ],
+    "created_at": "2025-06-03T18:39:27.183467",
+    "expires_at": "2025-06-04T02:39:27.183467",
+    "last_used": "2025-06-03T18:39:41.185690"
+  },
+  "admin_a5d7bf18a0c8a39b5f14553d6d32d0d715fae202f433e6d337c9a7568ec34773": {
+    "admin_id": "admin",
+    "username": "admin",
+    "role": "super_admin",
+    "permissions": [
+      "user_management",
+      "system_management",
+      "data_management",
+      "admin_management"
+    ],
+    "created_at": "2025-06-03T18:45:43.185430",
+    "expires_at": "2025-06-04T02:45:43.185430",
+    "last_used": "2025-06-03T18:46:24.423045"
+  },
+  "admin_a5c55e09d0ae435b1431baadd6e105c13b94f8cb1826e5221a330ca94f5e761b": {
+    "admin_id": "admin",
+    "username": "admin",
+    "role": "super_admin",
+    "permissions": [
+      "user_management",
+      "system_management",
+      "data_management",
+      "admin_management"
+    ],
+    "created_at": "2025-06-03T18:48:20.626991",
+    "expires_at": "2025-06-04T02:48:20.626991",
+    "last_used": "2025-06-03T18:48:26.758477"
+  },
+  "admin_d097a474b0bb90fa539a7e5844f9c4a48b46829ebfb15c59662fc6efa2c167aa": {
+    "admin_id": "admin",
+    "username": "admin",
+    "role": "super_admin",
+    "permissions": [
+      "user_management",
+      "system_management",
+      "data_management",
+      "admin_management"
+    ],
+    "created_at": "2025-06-03T18:55:16.007201",
+    "expires_at": "2025-06-04T02:55:16.007201",
+    "last_used": "2025-06-03T18:55:22.150646"
+  },
+  "admin_09961cbb38e526049e28e9ece24e493aaec3a12679cf3881fe633a136b2640d3": {
+    "admin_id": "admin",
+    "username": "admin",
+    "role": "super_admin",
+    "permissions": [
+      "user_management",
+      "system_management",
+      "data_management",
+      "admin_management"
+    ],
+    "created_at": "2025-06-03T19:12:57.114155",
+    "expires_at": "2025-06-04T03:12:57.114155",
+    "last_used": "2025-06-03T19:12:57.114155"
+  },
+  "admin_854e1b9691eee76aa5a1cf085f2d3b865cc4947935e528ea2b45da55d93e8df5": {
+    "admin_id": "admin",
+    "username": "admin",
+    "role": "super_admin",
+    "permissions": [
+      "user_management",
+      "system_management",
+      "data_management",
+      "admin_management"
+    ],
+    "created_at": "2025-06-03T19:38:47.680540",
+    "expires_at": "2025-06-04T03:38:47.680540",
+    "last_used": "2025-06-03T19:43:05.298408"
+  },
+  "a38eb16bb561a10794122765250ceb43be244c99f48f3f0a95e2f0d039498659": {
+    "username": "admin",
+    "created_at": "2025-06-03T20:08:31.251923",
+    "expires_at": "2025-06-10T20:08:31.251923",
+    "permissions": [
+      "user_management",
+      "data_management",
+      "system_management"
+    ]
+  },
+  "06071435c3e19d96797605228ac5c0f4fffbfda0ba2b39c7bf98b6390c43f1cb": {
+    "username": "admin",
+    "created_at": "2025-06-03T20:49:25.686887",
+    "expires_at": "2025-06-10T20:49:25.686887",
+    "permissions": [
+      "user_management",
+      "data_management",
+      "system_management"
+    ]
+  },
+  "7011eac4f95e9b7d5cc10d5eef76178a810f6ae04380422932976c5717149e54": {
+    "username": "admin",
+    "created_at": "2025-06-03T20:54:09.777905",
+    "expires_at": "2025-06-10T20:54:09.777905",
+    "permissions": [
+      "user_management",
+      "data_management",
+      "system_management"
+    ]
+  },
+  "bf65a6ffd82364441f09638f7c1bc79a9f416663b502e20895b18037f11ae2e3": {
+    "username": "admin",
+    "created_at": "2025-06-03T21:08:46.980428",
+    "expires_at": "2025-06-10T21:08:46.980428",
+    "permissions": [
+      "user_management",
+      "data_management",
+      "system_management"
+    ],
+    "last_used": "2025-06-03T21:37:08.686810"
+  },
+  "admin_71e726a9627789cfdf4fbc7fea0c50fdd0833b9d415572b5bdb57f6cf8f7e8ee": {
+    "admin_id": "admin",
+    "username": "admin",
+    "role": "super_admin",
+    "created_at": "2025-06-03T21:45:35.713190",
+    "expires_at": "2025-06-04T05:45:35.713190",
+    "permissions": [
+      "user_management",
+      "system_management",
+      "data_management",
+      "admin_management"
+    ],
+    "last_used": "2025-06-03T21:45:39.563306"
+  },
+  "admin_eec90434bfb182f74e4f32b5fe4fbb1930c9901f670bd11437b8efdd817b7369": {
+    "admin_id": "admin",
+    "username": "admin",
+    "role": "super_admin",
+    "created_at": "2025-06-03T22:33:14.165230",
+    "expires_at": "2025-06-04T06:33:14.165230",
+    "permissions": [
+      "user_management",
+      "system_management",
+      "data_management",
+      "admin_management"
+    ],
+    "last_used": "2025-06-03T22:45:14.134369"
+  },
+  "admin_768a98018bb07ec5660ec4a3a41aadd4d415d0b2d0bf2cc74b6609d34eb08d97": {
+    "admin_id": "admin",
+    "username": "admin",
+    "role": "super_admin",
+    "created_at": "2025-06-03T22:46:08.793478",
+    "expires_at": "2025-06-04T06:46:08.793478",
+    "permissions": [
+      "user_management",
+      "system_management",
+      "data_management",
+      "admin_management"
+    ],
+    "last_used": "2025-06-03T22:46:12.911700"
+  }
+}
