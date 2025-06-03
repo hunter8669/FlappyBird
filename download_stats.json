@@ -7,12 +7,12 @@
     },
     {
       "timestamp": "2025-06-03T05:45:37.960815",
-      "type": "source",
+      "type": "source", 
       "version": "1.2.0"
     },
     {
       "timestamp": "2025-06-03T05:46:09.401387",
-      "type": "exe",
+      "type": "source",
       "version": "1.2.0"
     },
     {
@@ -38,6 +38,16 @@
     {
       "timestamp": "2025-06-03T06:03:34.194862",
       "type": "exe",
+      "version": "1.2.0"
+    },
+    {
+      "timestamp": "2025-06-03T13:55:49.438973",
+      "type": "exe",
+      "version": "1.2.0"
+    },
+    {
+      "timestamp": "2025-06-03T13:56:17.060712",
+      "type": "source",
       "version": "1.2.0"
     }
   ]

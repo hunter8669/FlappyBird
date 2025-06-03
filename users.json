@@ -1,0 +1,15 @@
+{
+  "1998f518078077b257ecd308af8cf42b": {
+    "user_id": "1998f518078077b257ecd308af8cf42b",
+    "username": "xxx",
+    "phone": "18386634769",
+    "email": null,
+    "password_hash": "94edf28c6d6da38fd35d7ad53e485307f89fbeaf120485c8d17a43f323deee71",
+    "created_at": "2025-06-03T14:31:31.060500",
+    "last_login": "2025-06-03T14:31:36.477366",
+    "best_score": 0,
+    "total_score": 0,
+    "games_played": 0,
+    "is_active": true
+  }
+}
