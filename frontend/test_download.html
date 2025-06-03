@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>下载功能测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-card {
+            background: white;
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .btn {
+            background: #007bff;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+        .btn-success {
+            background: #28a745;
+        }
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+        .status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        .file-info {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>📥 FlapPy Bird 下载功能测试</h1>
+    
+    <div class="test-card">
+        <h2>🎮 桌面版EXE下载</h2>
+        <p>测试完整游戏的可执行文件下载</p>
+        <div class="file-info">
+            <strong>文件大小:</strong> ~243MB<br>
+            <strong>文件类型:</strong> Windows可执行文件
+        </div>
+        <a href="/api/downloads/desktop?type=exe" class="btn" target="_blank">下载 EXE 版本</a>
+        <button onclick="testEXEDownload()" class="btn btn-success">测试 EXE 下载</button>
+        <div id="exe-status"></div>
+    </div>
+    
+    <div class="test-card">
+        <h2>📦 源码版下载</h2>
+        <p>测试Python源代码打包下载</p>
+        <div class="file-info">
+            <strong>文件大小:</strong> ~几百KB<br>
+            <strong>文件类型:</strong> ZIP压缩包
+        </div>
+        <a href="/api/downloads/desktop?type=source" class="btn" target="_blank">下载源码版</a>
+        <button onclick="testSourceDownload()" class="btn btn-success">测试源码下载</button>
+        <div id="source-status"></div>
+    </div>
+    
+    <div class="test-card">
+        <h2>📄 兼容性指南下载</h2>
+        <p>测试兼容性解决方案文档下载</p>
+        <div class="file-info">
+            <strong>文件大小:</strong> ~几KB<br>
+            <strong>文件类型:</strong> 文本文件
+        </div>
+        <a href="/api/downloads/desktop?type=compatibility" class="btn" target="_blank">下载兼容性指南</a>
+        <button onclick="testCompatibilityDownload()" class="btn btn-success">测试兼容性指南</button>
+        <div id="compatibility-status"></div>
+    </div>
+    
+    <div class="test-card">
+        <h2>🔍 服务器状态检查</h2>
+        <button onclick="checkServerHealth()" class="btn btn-warning">检查服务器状态</button>
+        <div id="health-status"></div>
+    </div>
+    
+    <div class="test-card">
+        <h2>🏠 返回首页</h2>
+        <a href="/" class="btn">返回首页</a>
+        <a href="/game.html" class="btn">Web版游戏</a>
+    </div>
+
+    <script>
+        function showStatus(elementId, message, isSuccess = true) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="status ${isSuccess ? 'success' : 'error'}">${message}</div>`;
+        }
+
+        async function testEXEDownload() {
+            showStatus('exe-status', '⏳ 正在测试EXE下载...', true);
+            try {
+                const response = await fetch('/api/downloads/desktop?type=exe', { method: 'HEAD' });
+                if (response.ok) {
+                    showStatus('exe-status', '✅ EXE下载链接正常！可以开始下载', true);
+                } else {
+                    // HEAD不支持，尝试获取部分内容
+                    const partialResponse = await fetch('/api/downloads/desktop?type=exe', {
+                        headers: { 'Range': 'bytes=0-1023' }
+                    });
+                    if (partialResponse.ok || partialResponse.status === 206) {
+                        showStatus('exe-status', '✅ EXE下载功能正常！服务器响应正确', true);
+                    } else {
+                        showStatus('exe-status', `❌ EXE下载测试失败: ${partialResponse.status}`, false);
+                    }
+                }
+            } catch (error) {
+                showStatus('exe-status', `❌ EXE下载测试失败: ${error.message}`, false);
+            }
+        }
+
+        async function testSourceDownload() {
+            showStatus('source-status', '⏳ 正在测试源码下载...', true);
+            try {
+                const response = await fetch('/api/downloads/desktop?type=source', { method: 'HEAD' });
+                if (response.ok) {
+                    showStatus('source-status', '✅ 源码下载链接正常！', true);
+                } else {
+                    // 尝试实际下载测试
+                    const testResponse = await fetch('/api/downloads/desktop?type=source');
+                    if (testResponse.ok) {
+                        const size = testResponse.headers.get('content-length');
+                        showStatus('source-status', `✅ 源码下载功能正常！ZIP包大小: ${size ? Math.round(size/1024) + 'KB' : '未知'}`, true);
+                    } else {
+                        showStatus('source-status', `❌ 源码下载测试失败: ${testResponse.status}`, false);
+                    }
+                }
+            } catch (error) {
+                showStatus('source-status', `❌ 源码下载测试失败: ${error.message}`, false);
+            }
+        }
+
+        async function testCompatibilityDownload() {
+            showStatus('compatibility-status', '⏳ 正在测试兼容性指南下载...', true);
+            try {
+                const response = await fetch('/api/downloads/desktop?type=compatibility');
+                if (response.ok) {
+                    const text = await response.text();
+                    const size = text.length;
+                    showStatus('compatibility-status', `✅ 兼容性指南下载正常！文件大小: ${Math.round(size/1024)}KB`, true);
+                } else {
+                    showStatus('compatibility-status', `❌ 兼容性指南下载失败: ${response.status}`, false);
+                }
+            } catch (error) {
+                showStatus('compatibility-status', `❌ 兼容性指南下载失败: ${error.message}`, false);
+            }
+        }
+
+        async function checkServerHealth() {
+            showStatus('health-status', '⏳ 正在检查服务器状态...', true);
+            try {
+                const response = await fetch('/health');
+                if (response.ok) {
+                    const data = await response.json();
+                    showStatus('health-status', `✅ 服务器运行正常！时间: ${data.timestamp}`, true);
+                } else {
+                    showStatus('health-status', `❌ 服务器状态异常: ${response.status}`, false);
+                }
+            } catch (error) {
+                showStatus('health-status', `❌ 服务器连接失败: ${error.message}`, false);
+            }
+        }
+
+        // 页面加载时自动检查服务器状态
+        window.onload = function() {
+            checkServerHealth();
+        };
+    </script>
+</body>
+</html> 
